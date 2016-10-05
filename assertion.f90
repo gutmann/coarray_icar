@@ -3,7 +3,7 @@ module assertions_interface
   private
   public :: assert
   interface
-    module subroutine assert(assertion,assertion_name)
+    elemental impure module subroutine assert(assertion,assertion_name)
       implicit none
       logical, intent(in) :: assertion
       character(len=*), intent(in) :: assertion_name
@@ -14,7 +14,7 @@ end module
 submodule(assertions_interface) assertions_implementation
   implicit none
 contains
-  module subroutine assert(assertion,assertion_name)
+  elemental impure module subroutine assert(assertion,assertion_name)
     use iso_fortran_env, only : error_unit
     logical, intent(in) :: assertion
     character(len=*), intent(in) :: assertion_name

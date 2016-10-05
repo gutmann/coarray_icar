@@ -48,6 +48,7 @@ module domain_interface
     type(configuration_t) :: domain_configuration
   contains
     procedure :: default_initialize
+    procedure :: get_grid_dimensions
    !procedure, private :: initialize_with_configuration
    !procedure :: update_boundary
    !procedure :: halo_exchange
@@ -55,6 +56,8 @@ module domain_interface
    !generic :: read(formatted)=>initialize_from_file
     procedure :: advect
   end type
+
+  integer, parameter :: space_dimension=3
 
   interface
 
@@ -69,10 +72,17 @@ module domain_interface
       real,            intent(in)    :: dt
     end subroutine
 
+    ! Return x, y, z dimennsions of grid
+    module function get_grid_dimensions(this) result(n)
+      class(domain_t), intent(in) :: this
+      integer :: n(space_dimension)
+    end function
+
     ! Input domain_t object from file
     module subroutine initialize_from_file(this)
       class(domain_t), intent(out) :: this
     end subroutine
+
   end interface
 
 end module
@@ -88,7 +98,7 @@ contains
       class(domain_t), intent(out) :: this
       integer :: nx,ny,nz
       namelist/grid/ nx,ny,nz
-      read(input_unit,fmt=grid)
+      read(input_unit,nml=grid)
       call assert(nx>3 .and. ny>3 .and. nz>3, "minimum grid dimensions" )
       this%nx = nx
       this%ny = ny
@@ -122,7 +132,13 @@ contains
         allocate(this%water_vapor(nx,nz,ny),source=water_vapor_test_val)
       end associate
     end subroutine
-    
+
+    module function get_grid_dimensions(this) result(n)
+      class(domain_t), intent(in) :: this
+      integer :: n(space_dimension)
+      n = [this%nx,this%ny,this%nz]
+    end function
+
     module subroutine advect(this, dt)
         class(domain_t), intent(inout) :: this
         real,            intent(in)    :: dt
@@ -144,11 +160,15 @@ end submodule
 program main
   use iso_fortran_env, only : input_unit
   use domain_interface, only : domain_t
+  use assertions_interface, only : assert
   implicit none
   type(domain_t) :: domain[*]
 
-  print *,"domain%default_initialize()"
-  call domain%default_initialize()
+  block 
+    print *,"domain%default_initialize()"
+    call domain%default_initialize()
+    call assert(domain%get_grid_dimensions()==[200,200,20],"default grid dimensions")
+  end block
   
   print *,"domain%initialize()"
   call domain%initialize_from_file()
