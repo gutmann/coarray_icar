@@ -70,8 +70,8 @@ contains
           
           ! ultimately this will need to be more sophisticated, but for testing purposes this works
           ! q = q + (inflow - outflow)
-          this%water_vapor(2:nx-1,:,2:ny-1) = this%water_vapor(2:nx-1,:,2:ny-1)
-                                              + (uflux(1:nx-2,:,2:ny-1) - uflux(2:nx-1,:,2:ny-1))
+          this%water_vapor(2:nx-1,:,2:ny-1) = this%water_vapor(2:nx-1,:,2:ny-1)                     &
+                                              + (uflux(1:nx-2,:,2:ny-1) - uflux(2:nx-1,:,2:ny-1))   &
                                               + (vflux(2:nx-1,:,1:ny-2) - vflux(2:nx-1,:,2:ny-1))
           
         end associate
