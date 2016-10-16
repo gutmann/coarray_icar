@@ -56,13 +56,24 @@ contains
         real, allocatable :: uflux(:,:,:), vflux(:,:,:), wflux(:,:,:)
 
         associate(nx=>this%nx,ny=>this%ny,nz=>this%nz)
-          allocate(uflux(nx, nz, ny), source=0.0)
-          allocate(vflux(nx, nz, ny), source=0.0)
-          allocate(wflux(nx, nz, ny), source=0.0)
+          allocate(uflux(nx, nz, ny))
+          allocate(vflux(nx, nz, ny))
+        !   allocate(wflux(nx, nz, ny))
 
-          uflux = this%u(1:nx,:,:) * dt * this%water_vapor
-          vflux = this%v(:,:,1:ny) * dt * this%water_vapor
-          wflux = this%w(:,:,:)    * dt * this%water_vapor
+          call assert(this%u >= 0, "Restrict wind u values for testing")
+          call assert(this%v >= 0, "Restrict wind v values for testing")
+          call assert(this%w == 0, "Restrict wind w values for testing")
+
+          uflux = this%u(2:nx+1,:, :    ) * dt * this%water_vapor
+          vflux = this%v( :    ,:,2:ny+1) * dt * this%water_vapor
+        !   wflux = this%w( :    ,:, :    ) * dt * this%water_vapor ! since we assert w==0 this is irrelevant for now
+          
+          ! ultimately this will need to be more sophisticated, but for testing purposes this works
+          ! q = q + (inflow - outflow)
+          this%water_vapor(2:nx-1,:,2:ny-1) = this%water_vapor(2:nx-1,:,2:ny-1)
+                                              + (uflux(1:nx-2,:,2:ny-1) - uflux(2:nx-1,:,2:ny-1))
+                                              + (vflux(2:nx-1,:,1:ny-2) - vflux(2:nx-1,:,2:ny-1))
+          
         end associate
         
     end subroutine
