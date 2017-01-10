@@ -1,14 +1,15 @@
 module domain_interface
   use configuration_interface, only : configuration_t
+  use exchangeable_interface, only : exchangeable_t
   implicit none
 
   private
   public :: domain_t
-  
+
   type domain_t
     private
     ! water vapor field to be advected
-    real, allocatable :: water_vapor(:,:,:)
+    type(exchangeable_t) :: water_vapor
     ! wind field to control advection
     real, allocatable :: u(:,:,:)
     real, allocatable :: v(:,:,:)
@@ -21,12 +22,12 @@ module domain_interface
   contains
     procedure :: default_initialize
     procedure :: get_grid_dimensions
+    procedure :: initialize_from_file
+    procedure :: advect
+    procedure :: halo_exchange
+   !generic :: read(formatted)=>initialize_from_file
    !procedure, private :: initialize_with_configuration
    !procedure :: update_boundary
-   !procedure :: halo_exchange
-    procedure :: initialize_from_file
-   !generic :: read(formatted)=>initialize_from_file
-    procedure :: advect
   end type
 
   integer, parameter :: space_dimension=3
@@ -42,6 +43,11 @@ module domain_interface
     module subroutine advect(this, dt)
       class(domain_t), intent(inout) :: this
       real,            intent(in)    :: dt
+    end subroutine
+
+    ! Exchange subdomain boundary information 
+    module subroutine halo_exchange(this)
+      class(domain_t), intent(inout) :: this
     end subroutine
 
     ! Return x, y, z dimennsions of grid

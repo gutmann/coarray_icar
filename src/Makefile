@@ -1,7 +1,7 @@
 compile := ifort
-opt := -coarray=shared -standard-semantics 
-#compile := caf 
-#opt := -O3 -Wall -fcheck=all
+#opt := -coarray=shared -standard-semantics 
+compile := caf 
+opt := -O3 -Wall -fcheck=all
 #libs := -lsourcery
 link := $(compile)
 executable := test-skeleton
@@ -32,9 +32,11 @@ install: $(executable)
 # All dependencies are interfaces or libraries (no implementation depends on another implementation)
 main.o: domain_interface.o assertions_interface.o
 
-domain_interface.o: configuration_interface.o
+domain_interface.o: configuration_interface.o exchangeable_interface.o
 
-domain_implementation.o: domain_interface.o assertions_interface.o 
+domain_implementation.o: domain_interface.o exchangeable_interface.o assertions_interface.o 
+
+exchangeable_implementation.o: exchangeable_interface.o assertions_interface.o 
 
 configuration_implementation.o: configuration_interface.o
 
