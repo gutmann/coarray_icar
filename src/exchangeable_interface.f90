@@ -7,8 +7,8 @@ module exchangeable_interface
   type exchangeable_t
     private
     real, allocatable, public :: local(:,:,:)     
-    real, allocatable :: halo_south_out(:,:,:)[*],halo_south_in(:,:,:)[*]
-    real, allocatable :: halo_north_out(:,:,:)[*],halo_north_in(:,:,:)[*]
+    real, allocatable :: halo_south_in(:,:,:)[*]
+    real, allocatable :: halo_north_in(:,:,:)[*]
     logical :: north_boundary=.false.
     logical :: south_boundary=.false.
   contains
@@ -21,11 +21,12 @@ module exchangeable_interface
 
   interface
 
-    module subroutine const(this,grid_dims,initial_value)
+    module subroutine const(this,grid_dims,initial_value,halo_width)
       implicit none
       class(exchangeable_t), intent(out) :: this
       integer , intent(in) :: grid_dims(:)
       real, intent(in) :: initial_value
+      integer, intent(in), optional :: halo_width
     end subroutine
 
     module subroutine exchange(this)

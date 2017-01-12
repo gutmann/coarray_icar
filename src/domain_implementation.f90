@@ -18,6 +18,7 @@ contains
         allocate(this%u(nx+1, nz, ny),  source=u_test_val)
         allocate(this%v(nx,   nz, ny+1),source=v_test_val)
         allocate(this%w(nx,   nz, ny),  source=w_test_val)
+        print *,"call this%water_vapor%initialize(this%get_grid_dimensions(),water_vapor_test_val)"
         call this%water_vapor%initialize(this%get_grid_dimensions(),water_vapor_test_val)
       end associate
     end subroutine 
@@ -26,11 +27,13 @@ contains
       class(domain_t), intent(out) :: this
       integer :: nx,ny,nz
       namelist/grid/ nx,ny,nz
-      read(input_unit,nml=grid)
+      print *,"read(input_unit,nml=grid)"
+      read(input_unit,nml=grid) 
       call assert(nx>3 .and. ny>3 .and. nz>3, "minimum grid dimensions" )
       this%nx = nx
       this%ny = my_ny(ny)
       this%nz = nz
+      print *,"call master_initialize(this)"
       call master_initialize(this)
     end subroutine
 
