@@ -5,7 +5,7 @@ submodule(domain_interface) domain_implementation
 
 contains
 
-    module subroutine master_initialize(this)
+    subroutine master_initialize(this)
       class(domain_t), intent(inout) :: this
       if ( allocated(this%u) ) deallocate(this%u)
       if ( allocated(this%v) ) deallocate(this%v)
@@ -24,7 +24,7 @@ contains
     end subroutine 
 
     module subroutine initialize_from_file(this)
-      class(domain_t), intent(out) :: this
+      class(domain_t), intent(inout) :: this
       integer :: nx,ny,nz
       namelist/grid/ nx,ny,nz
       print *,"read(input_unit,nml=grid)"
@@ -38,7 +38,7 @@ contains
     end subroutine
 
     module subroutine default_initialize(this)
-      class(domain_t), intent(out) :: this
+      class(domain_t), intent(inout) :: this
       integer, parameter :: nx_global=200,ny_global=200,nz_global=20
 
       this%nx = nx_global
@@ -47,7 +47,7 @@ contains
       call master_initialize(this)
     end subroutine
 
-    module function my_ny(ny_global) result(ny_local)
+    function my_ny(ny_global) result(ny_local)
        integer, intent(in) :: ny_global
        integer :: ny_local
        associate(me=>this_image(),ni=>num_images())

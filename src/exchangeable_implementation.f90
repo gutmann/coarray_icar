@@ -5,8 +5,8 @@ submodule(exchangeable_interface) exchangeable_implementation
 
 contains
 
-  subroutine const(this,grid_dims,initial_value,halo_width)
-    class(exchangeable_t), intent(out) :: this
+  module subroutine const(this,grid_dims,initial_value,halo_width)
+    class(exchangeable_t), intent(inout) :: this
     integer, intent(in) :: grid_dims(:)
     real, intent(in) :: initial_value
     integer, intent(in), optional :: halo_width
@@ -26,7 +26,7 @@ contains
     allocate( this%halo_north_in( grid_dims(1),grid_dims(2),halo_size)[*], source=initial_value)
   end subroutine
 
-  subroutine exchange(this)
+  module subroutine exchange(this)
     class(exchangeable_t), intent(inout) :: this
     print *,"exchange unimplemented"
   end subroutine
