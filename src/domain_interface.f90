@@ -36,7 +36,7 @@ module domain_interface
 
     ! Set default component values
     module subroutine default_initialize(this)
-      class(domain_t), intent(out) :: this
+      class(domain_t), intent(inout) :: this
     end subroutine
 
     ! MPDATA algorithm
@@ -58,7 +58,7 @@ module domain_interface
 
     ! Input domain_t object from file
     module subroutine initialize_from_file(this)
-      class(domain_t), intent(out) :: this
+      class(domain_t), intent(inout) :: this
     end subroutine
 
   end interface

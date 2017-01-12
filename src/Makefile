@@ -1,4 +1,5 @@
 compile := ifort
+# compile := mpif90 # co-array capable ifort on yellowstone
 #opt := -coarray=shared -standard-semantics 
 compile := caf 
 opt := -O3 -Wall -fcheck=all

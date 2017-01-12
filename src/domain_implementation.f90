@@ -5,7 +5,7 @@ submodule(domain_interface) domain_implementation
 
 contains
 
-    module subroutine master_initialize(this)
+    subroutine master_initialize(this)
       class(domain_t), intent(inout) :: this
       if ( allocated(this%u) ) deallocate(this%u)
       if ( allocated(this%v) ) deallocate(this%v)
@@ -18,24 +18,27 @@ contains
         allocate(this%u(nx+1, nz, ny),  source=u_test_val)
         allocate(this%v(nx,   nz, ny+1),source=v_test_val)
         allocate(this%w(nx,   nz, ny),  source=w_test_val)
+        print *,"call this%water_vapor%initialize(this%get_grid_dimensions(),water_vapor_test_val)"
         call this%water_vapor%initialize(this%get_grid_dimensions(),water_vapor_test_val)
       end associate
     end subroutine 
 
     module subroutine initialize_from_file(this)
-      class(domain_t), intent(out) :: this
+      class(domain_t), intent(inout) :: this
       integer :: nx,ny,nz
       namelist/grid/ nx,ny,nz
-      read(input_unit,nml=grid)
+      print *,"read(input_unit,nml=grid)"
+      read(input_unit,nml=grid) 
       call assert(nx>3 .and. ny>3 .and. nz>3, "minimum grid dimensions" )
       this%nx = nx
       this%ny = my_ny(ny)
       this%nz = nz
+      print *,"call master_initialize(this)"
       call master_initialize(this)
     end subroutine
 
     module subroutine default_initialize(this)
-      class(domain_t), intent(out) :: this
+      class(domain_t), intent(inout) :: this
       integer, parameter :: nx_global=200,ny_global=200,nz_global=20
 
       this%nx = nx_global
@@ -44,7 +47,7 @@ contains
       call master_initialize(this)
     end subroutine
 
-    module function my_ny(ny_global) result(ny_local)
+    function my_ny(ny_global) result(ny_local)
        integer, intent(in) :: ny_global
        integer :: ny_local
        associate(me=>this_image(),ni=>num_images())
