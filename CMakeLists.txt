@@ -24,7 +24,7 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     "in a manner such as\n"
     "  $ mkdir build-opencarrays\n"
     "  $ cd build-opencoarrays\n"
-    "  $ CC=mpicc FC=mpif90 cmake <path-to-opencoarrays-source-directory> -DCMAKE_INSTALL_PREFIX=<path-to-install-directory>\n"
+    "  $ CC=gcc FC=gfortran cmake <path-to-opencoarrays-source-directory> -DCMAKE_INSTALL_PREFIX=<path-to-install-directory>\n"
     "\nsubstituting the appropriate syntax for your shell (the above line assumes the bash shell)."
     )
 endif()

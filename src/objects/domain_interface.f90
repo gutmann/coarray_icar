@@ -57,8 +57,9 @@ module domain_interface
     end function
 
     ! Input domain_t object from file
-    module subroutine initialize_from_file(this)
+    module subroutine initialize_from_file(this,file_name)
       class(domain_t), intent(inout) :: this
+      character(len=*), intent(in) :: file_name
     end subroutine
 
   end interface

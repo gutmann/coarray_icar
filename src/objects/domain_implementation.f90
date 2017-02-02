@@ -1,6 +1,6 @@
 submodule(domain_interface) domain_implementation
   use assertions_interface, only : assert
-  use iso_fortran_env, only : input_unit
+  use iso_fortran_env, only : error_unit
   implicit none
 
 contains
@@ -23,13 +23,26 @@ contains
       end associate
     end subroutine 
 
-    module subroutine initialize_from_file(this)
+    module subroutine initialize_from_file(this,file_name)
       class(domain_t), intent(inout) :: this
+      character(len=*), intent(in) :: file_name 
       integer :: nx,ny,nz
+      integer :: my_unit,stat
+      character(len=64) error_message
       namelist/grid/ nx,ny,nz
-      print *,"read(input_unit,nml=grid)"
-      read(input_unit,nml=grid) 
-      call assert(nx>3 .and. ny>3 .and. nz>3, "minimum grid dimensions" )
+
+      open(file=file_name,newunit=my_unit,iostat=stat,status='old',action='read') 
+      write(error_message,*) "image ",this_image()," could not open file " // trim(file_name) 
+      call assert(stat==0,error_message)
+
+      read(unit=my_unit,nml=grid,iostat=stat) 
+      write(error_message,*)"image ",this_image()," could not read file " // trim(file_name) 
+      call assert(stat==0,error_message)
+
+      close(my_unit,iostat=stat) 
+      write(error_message,*)"image ",this_image()," could not close file " // trim(file_name) 
+      call assert(stat==0,error_message)
+
       this%nx = nx
       this%ny = my_ny(ny)
       this%nz = nz

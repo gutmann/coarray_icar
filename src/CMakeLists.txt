@@ -1,9 +1,4 @@
-add_executable(test-coarray-icar 
-  assertions_implementation.f90
-  assertions_interface.f90
-  configuration_implementation.f90
-  configuration_interface.f90
-  domain_implementation.f90
-  domain_interface.f90
-  main.f90
-)
+set(directories_to_build tests)
+foreach(directory ${directories_to_build})
+  add_subdirectory(${directory})
+endforeach()
