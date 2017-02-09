@@ -64,39 +64,20 @@ add_subdirectory(src)
 
 enable_testing()
 
-# Determine if we're using Open MPI
-execute_process(COMMAND ${MPIEXEC} --version
-  OUTPUT_VARIABLE mpi_version_out)
-if (mpi_version_out MATCHES "[Oo]pen[ -][Mm][Pp][Ii]")
-  message( STATUS "OpenMPI detected")
-  set ( openmpi true )
-endif ()
+set(tests_root ${CMAKE_CURRENT_BINARY_DIR}/src/tests)
 
-include( ProcessorCount )
-ProcessorCount(N)
+# Define a function for adding MPI tests comprised of running compiled programs 
+# and checking their output for the string "Test passed."
 function(add_mpi_test name num_mpi_proc path)
-   if ( ((N LESS num_mpi_proc) OR (N EQUAL 0)) )
-     message(STATUS "Test ${name} is oversubscribed: ${num_mpi_proc} ranks requested with ${N} system processor available.")
-     if ( openmpi )
-       if ( N LESS 2 )
-	 set( num_mpi_proc 2 )
-	 set (test_parameters --oversubscribed)
-       else()
-	 set ( num_mpi_proc ${N} )
-       endif()
-       message( STATUS "Open-MPI detected, over-riding oversubscribed test, ${name}, with ${num_mpi_proc} ranks." )
-     endif()
-   endif()
-   set(test_parameters ${test_parameters} ${MPIEXEC_NUMPROC_FLAG} ${num_mpi_proc} )
-   add_test(NAME ${name} COMMAND ${MPIEXEC} ${test_parameters} "${path}")
-   set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
+  set(test_parameters ${MPIEXEC_NUMPROC_FLAG} ${num_mpi_proc} )
+  add_test(NAME ${name} COMMAND ${MPIEXEC} ${test_parameters} "${path}/${name}")
+  set_property(TEST ${name} PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
 endfunction(add_mpi_test)
 
-#set(tests_root ${CMAKE_CURRENT_BINARY_DIR}/src/tests)
+# Invoke the above function with the following arguments: 
+# test name, compiled program name, number of images, path to program:
+add_mpi_test(initialization_test initialization-test 1  ${CMAKE_BINARY_DIR}/src/tests/initialization-test)
 
-#if(gfortran)
-#  add_mpi_test(initialize_mpi 2 ${tests_root}/unit/init_register/initialize_mpi)
-#else()
-#  add_test(co_sum_extension ${tests_root}/unit/extensions/test-co_sum-extension.sh)
-#  set_property(TEST co_sum_extension PROPERTY PASS_REGULAR_EXPRESSION "Test passed.")
-#endif()
+if(gfortran_compiler)
+else()
+endif()

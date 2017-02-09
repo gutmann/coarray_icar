@@ -21,4 +21,6 @@ program main
   
  !print *,"domain%halo_exchange()"
  !call domain%halo_exchange()
+
+ print *,"Test passed."
 end program

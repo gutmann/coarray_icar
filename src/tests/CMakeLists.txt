@@ -9,3 +9,4 @@ add_executable( initialization-test
   ../utilities/configuration_implementation.f90
   ../utilities/configuration_interface.f90
 )
+configure_file(input-parameters.txt ${CMAKE_BINARY_DIR}/input-parameters.txt COPYONLY)
