@@ -1,8 +1,11 @@
 executable := test-initialization
-compile := caf 
+#compile := caf 
+compile := ifort
 link := $(compile)
+link_flags := -coarray=shared
 opt := -O3 -Wall -fcheck=all
-libs := -lsourcery
+opt := -standard-semantics -coarray=shared -check all -traceback
+libs := 
 
 objects_dir=../objects
 utilities=../utilities
@@ -30,7 +33,7 @@ object_files := $(subst .f90,.o,$(source_files))
 
 # Executable depends on all object files and on the sourcery library
 $(executable): $(object_files) #$(lib_dirs)/libx.a
-	$(link) $(object_files) -o $@ #$(lib_dirs) $(libs)
+	$(link) $(object_files) -o $@ $(link_flags) #$(lib_dirs) $(libs)
 
 install: $(executable)
 	mkdir -p $(install_dir)
