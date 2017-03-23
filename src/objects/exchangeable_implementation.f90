@@ -58,7 +58,7 @@ contains
     subroutine put_north
       integer :: n
       n = size(this%local,3)
-      this%halo_south_in(:,:,:)[north_neighbor] = this%local(:,:,n-halo_size:n)
+      this%halo_south_in(:,:,:)[north_neighbor] = this%local(:,:,n-halo_size+1:n)
     end subroutine
 
     subroutine put_south
