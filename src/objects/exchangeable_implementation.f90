@@ -16,14 +16,14 @@ contains
     if (present(halo_width)) then
         halo_size = halo_width
     else
-        halo_size = default_halo_size 
+        halo_size = default_halo_size
     end if
 
     if (allocated(this%local)) deallocate(this%local)
     this%north_boundary = (this_image() == num_images())
     this%south_boundary = (this_image() == 1)
 
-    associate( local_halo_size=>2*halo_size - merge(halo_size,0,this%south_boundary) - merge(halo_size,0,this%north_boundary) ) 
+    associate( local_halo_size=>2*halo_size - merge(halo_size,0,this%south_boundary) - merge(halo_size,0,this%north_boundary) )
       allocate(this%local(grid_dims(1),grid_dims(2),grid_dims(3) + local_halo_size),source=initial_value)
     end associate
 
@@ -43,7 +43,7 @@ contains
         neighbors = [me-1,me+1]
       end if
     end associate
-    
+
   end subroutine
 
   module subroutine exchange(this)
@@ -68,7 +68,7 @@ contains
     subroutine retrieve_north_halo
       integer :: n
       n = size(this%local,3)
-      this%local(:,:,n-halo_size:n) = this%halo_north_in
+      this%local(:,:,n-halo_size+1:n) = this%halo_north_in
     end subroutine
 
     subroutine retrieve_south_halo
