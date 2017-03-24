@@ -89,4 +89,4 @@ might exeute the following at the command prompt:
 
 [GNU Fortran Compiler]: https://gcc.gnu.org/fortran/ 
 [CMake]: https://www.cmake.org/
-[ncar logo]: https://wiki.ucar.edu/download/attachments/52004557/ncar-logo-lg.jpg?api=v2
+[ncar logo]: http://www.innovationews.com/content/uploads/2013/02/ncar-logo.jpg 
