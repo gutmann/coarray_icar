@@ -29,6 +29,11 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     )
 endif()
 
+#Toggle C preprocessor macro for turning assertions on or off
+if(NO_ASSERTIONS)
+  add_definitions(-DNO_ASSERTIONS)
+endif()
+
 #Report untested Fortran compiler unless explicitly directed to build all examples.
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
   set(gfortran_compiler true)
@@ -76,7 +81,7 @@ endfunction(add_mpi_test)
 
 # Invoke the above function with the following arguments: 
 # test name, compiled program name, number of images, path to program:
-add_mpi_test(initialization_test initialization-test 1  ${CMAKE_BINARY_DIR}/src/tests/initialization-test)
+add_mpi_test(initialization_test initialization-test 4  ${CMAKE_BINARY_DIR}/src/tests/initialization-test)
 
 if(gfortran_compiler)
 else()

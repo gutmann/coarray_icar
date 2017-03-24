@@ -1,4 +1,5 @@
 submodule(exchangeable_interface) exchangeable_implementation
+  use assertions_interface, only : assert, assertions 
   implicit none
 
   integer, parameter :: default_halo_size=5
@@ -58,10 +59,20 @@ contains
     subroutine put_north
       integer :: n
       n = size(this%local,3)
+      if (assertions) then
+        !! gfortran 6.3.0 doesn't check coarray shape conformity with -fcheck=all so we verify with an assertion
+        call assert( shape(this%halo_south_in(:,:,:)[north_neighbor]) == shape(this%local(:,:,n-halo_size+1:n)), &
+                     "put_north: conformable halo_south_in and local " )
+      end if
       this%halo_south_in(:,:,:)[north_neighbor] = this%local(:,:,n-halo_size+1:n)
     end subroutine
 
     subroutine put_south
+      if (assertions) then
+        !! gfortran 6.3.0 doesn't check coarray shape conformity with -fcheck=all so we verify with an assertion
+        call assert( shape(this%halo_north_in(:,:,:)[south_neighbor]) == shape(this%local(:,:,1:halo_size)), &
+                     "put_south: conformable halo_north_in and local " )
+      end if
       this%halo_north_in(:,:,:)[south_neighbor] = this%local(:,:,1:halo_size)
     end subroutine
 
