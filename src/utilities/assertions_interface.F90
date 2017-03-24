@@ -1,22 +1,22 @@
 module assertions_interface
   !! summary: Utility for runtime checking of logical assertions.
-  !!          Compile with -DDEBUG to turn on assertions
-  !!          Without -DDEBUG, optimizing compilers will likely eliminate all assertions as long
-  !!          as all assertion calls are conditioned on the value of the "assertions" constant.
   !!
-  !! Use case 1: 
-  !!    Pass the optional success argument & check for false return value as an indication of assertion failure.
+  !! Compile with -DNO_ASSERTIONS to turn assertions off
+  !!
+  !! Use case 1 
+  !! ----------
+  !!    Pass the optional success argument & check for false return value as an indication of assertion failure:
   !!
   !!    use assertions_interface, only : assert,assertions
   !!    if (assertions) call assert( 2 > 1, "always true inequality", success)
   !!    if (error_code/=0) call my_error_handler()
   !!
-  !! Use case 2: 
-  !!    Error-terminate if the assertion fails.
+  !! Use case 2
+  !! ----------
+  !!    Error-terminate if the assertion fails:
   !!
   !!    use assertions_interface, only : assert,assertions
   !!    if (assertions) call assert( 2 > 1, "always true inequality")
-  !! 
   !!
   implicit none
   private
