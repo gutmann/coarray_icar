@@ -29,15 +29,9 @@ if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
     )
 endif()
 
-#Toggle C preprocessor macro for turning assertions on or off
-if(NO_ASSERTIONS)
-  add_definitions(-DNO_ASSERTIONS)
-endif()
-
 #Report untested Fortran compiler unless explicitly directed to build all examples.
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
   set(gfortran_compiler true)
-  # add_definitions(-DPREFIX_NAME=_gfortran_caf_)
   set ( CMAKE_Fortran_FLAGS_CODECOVERAGE "-fprofile-arcs -ftest-coverage -O0"
     CACHE STRING "Code coverage C compiler flags")
 else()
@@ -49,7 +43,7 @@ else()
 endif()
 
 if(gfortran_compiler)
-  set(CMAKE_REQUIRED_FLAGS "-fcoarray=single -ffree-form")
+  set(CMAKE_REQUIRED_FLAGS "-fcoarray=single -ffree-form") # set temporary flag
 endif()
 include(CheckFortranSourceCompiles)
 CHECK_Fortran_SOURCE_COMPILES("

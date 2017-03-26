@@ -29,7 +29,7 @@ Compile and test coarray in a bash shell on a Linux, macOS, or the Windows Subsy
   cd <path-to-coarray-icar>  # Change directory to the coarray_icar source directory
   mkdir build            # create the build directory
   cd build
-  FC=<compiler-command> cmake ..
+  FC=<compiler-command> cmake .. -DCMAKE_INSTALL_PREFIX=<coarray-icar-install-path>
   make -j <number-of-processes>
   ctest
 ```
@@ -37,6 +37,7 @@ where
  * \<path-to-coarray-icar\> is the location of of the downloaded coarray ICAR source archive
  * \<number-of-processes\> is a count of the parallel processes that `make` should use, and
  * \<compiler-command\> is the command you use to invoke the compiler of your choice.
+ * \<coarray-icar-install-path\> is the desired location for installing coarray ICAR 
 
 For example, you might specify, `~/coarray_icar`, `4`, and `caf`, respectively, if Coarray 
 ICAR your home directoy, you want to accelerate the build by using 4 parallel processes, and 
@@ -46,8 +47,7 @@ Alternatively specify, `ifort` as the compiler command for to invoke the Intel F
 TODO: The CMake files need adjusting for building with non-GNU compilers. 
 
 ### Build options
-Append `-DNO_ASSERTIONS` to the above `cmake` command to turn off runtime checking of assertions.
-
+Append `-DNO_ASSERTIONS=ON` to the above `cmake` command to turn off runtime checking of assertions.
 
 System requirements
 -------------------

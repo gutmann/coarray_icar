@@ -23,13 +23,18 @@ module assertions_interface
   public :: assert
   public :: assertions
   
+! Set the USE_ASSERTIONS constant below using the C preprocessor:
+!
+!    gfortran -DUSE_ASSERTIONS=.false. -c assertions_interface.F90 
+!
+! or set the corresponding NO_ASSERTIONS variable defined in this directory's CMakeLists.txt:
+!
+!    FC=caf cmake <path-to-icar-source-dir> -DNO_ASSERTIONS=ON
+!
 ! Conditioning assertion calls on this compile-time constant enables optimizing compilers
-! to eliminate assertion calls during a dead-code removal phase of optimization
-#ifdef NO_ASSERTIONS
-  logical, parameter :: assertions=.false.
-#else
-  logical, parameter :: assertions=.true.
-#endif
+! to eliminate assertion calls during a dead-code removal phase of optimization.
+
+  logical, parameter :: assertions=USE_ASSERTIONS
 
   interface
     elemental impure module subroutine assert(assertion,description,success)

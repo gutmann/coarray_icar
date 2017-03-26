@@ -1,5 +1,5 @@
 submodule(domain_interface) domain_implementation
-  use assertions_interface, only : assert
+  use assertions_interface, only : assert,assertions
   use iso_fortran_env, only : error_unit
   implicit none
 
@@ -33,15 +33,15 @@ contains
 
       open(file=file_name,newunit=my_unit,iostat=stat,status='old',action='read') 
       write(error_message,*) "image ",this_image()," could not open file " // trim(file_name) 
-      call assert(stat==0,error_message)
+      if (assertions) call assert(stat==0,error_message)
 
       read(unit=my_unit,nml=grid,iostat=stat) 
       write(error_message,*)"image ",this_image()," could not read file " // trim(file_name) 
-      call assert(stat==0,error_message)
+      if (assertions) call assert(stat==0,error_message)
 
       close(my_unit,iostat=stat) 
       write(error_message,*)"image ",this_image()," could not close file " // trim(file_name) 
-      call assert(stat==0,error_message)
+      if (assertions) call assert(stat==0,error_message)
 
       this%nx = nx
       this%ny = my_ny(ny)
@@ -89,9 +89,9 @@ contains
           allocate(vflux(nx, nz, ny))
         !   allocate(wflux(nx, nz, ny))
 
-          call assert(this%u >= 0, "Restrict wind u values for testing")
-          call assert(this%v >= 0, "Restrict wind v values for testing")
-          call assert(this%w == 0, "Restrict wind w values for testing")
+          if (assertions) call assert(this%u >= 0, "Restrict wind u values for testing")
+          if (assertions) call assert(this%v >= 0, "Restrict wind v values for testing")
+          if (assertions) call assert(this%w == 0, "Restrict wind w values for testing")
 
           uflux = this%u(2:nx+1,:, :    ) * dt * this%water_vapor%local
           vflux = this%v( :    ,:,2:ny+1) * dt * this%water_vapor%local
