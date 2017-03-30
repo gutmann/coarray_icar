@@ -11,14 +11,14 @@ program main
     print *,"domain%default_initialize()"
     call domain%default_initialize()
   end block
-  
+
   block
     type(domain_t) :: domain
     print *,"domain%initialize_from_file('input-parameters.txt')"
     call domain%initialize_from_file('input-parameters.txt')
-  
-   !print *,"domain%advect(dt = 4.0)"
-   !call domain%advect(dt = 4.0)
+
+   print *,"domain%advect(dt = 4.0)"
+   call domain%advect(dt = 4.0)
   
     print *,"domain%halo_exchange()"
     call domain%halo_exchange()

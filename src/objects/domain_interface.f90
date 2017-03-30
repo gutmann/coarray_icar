@@ -11,13 +11,13 @@ module domain_interface
     ! water vapor field to be advected
     type(exchangeable_t) :: water_vapor
     ! wind field to control advection
-    real, allocatable :: u(:,:,:)
-    real, allocatable :: v(:,:,:)
-    real, allocatable :: w(:,:,:)
-    
+    type(exchangeable_t) :: u
+    type(exchangeable_t) :: v
+    type(exchangeable_t) :: w
+
     ! contains the size of the domain (or the local tile?)
     integer :: nx, ny, nz
-    
+
     type(configuration_t) :: domain_configuration
   contains
     procedure :: default_initialize
@@ -36,28 +36,34 @@ module domain_interface
 
     ! Set default component values
     module subroutine default_initialize(this)
+      implicit none
       class(domain_t), intent(inout) :: this
     end subroutine
 
     ! MPDATA algorithm
     module subroutine advect(this, dt)
+      implicit none
       class(domain_t), intent(inout) :: this
       real,            intent(in)    :: dt
     end subroutine
 
-    ! Exchange subdomain boundary information 
+    ! Exchange subdomain boundary information
     module subroutine halo_exchange(this)
+      implicit none
       class(domain_t), intent(inout) :: this
     end subroutine
 
     ! Return x, y, z dimennsions of grid
-    module function get_grid_dimensions(this) result(n)
+    module function get_grid_dimensions(this, nx_extra, ny_extra) result(n)
+      implicit none
       class(domain_t), intent(in) :: this
+      integer,         intent(in), optional :: nx_extra, ny_extra
       integer :: n(space_dimension)
     end function
 
     ! Input domain_t object from file
     module subroutine initialize_from_file(this,file_name)
+      implicit none
       class(domain_t), intent(inout) :: this
       character(len=*), intent(in) :: file_name
     end subroutine
