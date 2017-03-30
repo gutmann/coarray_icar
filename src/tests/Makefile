@@ -1,20 +1,43 @@
-executable := test-initialization
-#compile := caf 
-compile := ifort
-link := $(compile)
-link_flags := -coarray=shared
-opt := -O3 -Wall -fcheck=all
-opt := -standard-semantics -coarray=shared -check all -traceback
-libs := 
+# Usage:
+#
+#    make USE_ASSERTIONS=.false. # Defaults to .true. if not provided
 
-objects_dir=../objects
-utilities=../utilities
+# Example of printing a variable named "var" delimited by square braces
+# $(info $$var is [${var}])
+
+ifeq ($(USE_ASSERTIONS),)
+  USE_ASSERTIONS:=.true.
+endif
+
+executable := test-initialization
+# Options: gnu, intel
+compiler := gnu
+
+# Specify the compiler invocation name and flags
+ifeq ($(compiler),gnu)
+  compile := caf 
+  opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+  link_flags := -fcheck=all -Wall -fbacktrace -g
+  lib :=
+else
+  ifeq ($(compiler),intel)
+    compile := ifort 
+    opt := -standard-semantics -coarray=shared -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+    link_flags := -standard-semantics -coarray=shared -check all -traceback -g
+    lib := 
+  endif
+endif 
+link := $(compile)
+
+objects_dir=../objects/
+utilities=../utilities/
 tests_dir=.
 
 coarray_icar_root := ../..
 lib_dirs := -L $(homework_root)/lib
 mod_dirs := -I $(homework_root)/mod
 install_dir := $(homework_root)/bin
+
 
 # Locate required source files
 objects_source := $(shell ls $(objects_dir)/*.f90)
@@ -32,8 +55,8 @@ source_files := $(bare_objects_source) $(bare_utilities_source) $(bare_tests_sou
 object_files := $(subst .f90,.o,$(source_files))
 
 # Executable depends on all object files and on the sourcery library
-$(executable): $(object_files) #$(lib_dirs)/libx.a
-	$(link) $(object_files) -o $@ $(link_flags) #$(lib_dirs) $(libs)
+$(executable): $(object_files)
+	$(link) $(object_files) -o $@ $(link_flags)
 
 install: $(executable)
 	mkdir -p $(install_dir)
@@ -50,15 +73,15 @@ domain_implementation.o: domain_interface.o assertions_interface.o
 
 # Prefer files in the present working directory (picks the local main over another main)
 %.o: %.f90
-	$(compile) $(opt) -c $<  #$(mod_dirs) $(lib_dirs) $(libs)
+	$(compile) $(opt) -c $<
 
 # Compile dependencies from utilities directory
 %.o: $(utilities)/%.f90
-	$(compile) $(opt) -c $< #$(mod_dirs) $(lib_dirs) $(libs)
+	$(compile) $(opt) -c $<
 
 # Compile dependencies from objects
 %.o: $(objects_dir)/%.f90
-	$(compile) $(opt) -c $<  #$(mod_dirs) $(lib_dirs) $(libs)
+	$(compile) $(opt) -c $<
 
 .PHONY : clean uninstall
 
