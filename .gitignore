@@ -12,6 +12,7 @@
 *.so
 *.dylib
 *.dll
+*.dSYM
 
 # Fortran module files
 *.mod
@@ -27,3 +28,6 @@
 *.exe
 *.out
 *.app
+
+test-initialization
+input-parameters.txt
