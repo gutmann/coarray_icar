@@ -9,7 +9,7 @@ endif()
 
 add_library( icar_utils
   assertions_implementation.f90
-  assertions_interface.F90
+  assertions_interface.f90
   configuration_implementation.f90
   configuration_interface.f90
 )
