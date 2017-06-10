@@ -1,5 +1,5 @@
 submodule(exchangeable_interface) exchangeable_implementation
-  use assertions_interface, only : assert, assertions 
+  use assertions_interface, only : assert, assertions
   implicit none
 
   integer, parameter :: default_halo_size=5

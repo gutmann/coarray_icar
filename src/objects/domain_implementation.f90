@@ -18,6 +18,9 @@ contains
         call this%w%initialize(this%get_grid_dimensions(), w_test_val)
         print *,"call this%water_vapor%initialize(this%get_grid_dimensions(),water_vapor_test_val)"
         call this%water_vapor%initialize(this%get_grid_dimensions(),water_vapor_test_val)
+        if (this_image()==1) then
+            this%water_vapor%local(:,1,1) = water_vapor_test_val * 2
+        endif
       end associate
     end subroutine
 
