@@ -34,11 +34,14 @@ if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
   set(gfortran_compiler true)
   set ( CMAKE_Fortran_FLAGS_CODECOVERAGE "-fprofile-arcs -ftest-coverage -O0"
     CACHE STRING "Code coverage C compiler flags")
+elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Intel" )
+  set(intel_compiler true)
+  set ( CMAKE_Fortran_FLAGS "-coarray")
 else()
   message(WARNING
     "\n"
     "Attempting to build with untested Fortran compiler: ${CMAKE_Fortran_COMPILER_ID}. "
-    "Please report any failures to opencoarrays@googlegroups.com\n\n"
+    "Please report any failures via https://github.com/rouson/coarray_icar/issues\n\n"
   )
 endif()
 
@@ -76,7 +79,3 @@ endfunction(add_mpi_test)
 # Invoke the above function with the following arguments: 
 # test name, compiled program name, number of images, path to program:
 add_mpi_test(initialization_test initialization-test 4  ${CMAKE_BINARY_DIR}/src/tests/initialization-test)
-
-if(gfortran_compiler)
-else()
-endif()
