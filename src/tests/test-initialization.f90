@@ -14,12 +14,20 @@ program main
 
   block
     type(domain_t) :: domain
-    print *,"domain%initialize_from_file('input-parameters.txt')"
+    integer :: i,nz
+    print *,this_image(),"domain%initialize_from_file('input-parameters.txt')"
     call domain%initialize_from_file('input-parameters.txt')
+
+    if (this_image()==1) then
+        nz = size(domain%pressure,2)
+        do i=nz,1,-1
+            print *,domain%z(1,i,1), domain%pressure(1,i,1)/100, domain%temperature(1,i,1)
+        end do
+    endif
 
    print *,"domain%advect(dt = 4.0)"
    call domain%advect(dt = 4.0)
-  
+
     print *,"domain%halo_exchange()"
     call domain%halo_exchange()
   end block

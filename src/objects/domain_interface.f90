@@ -21,9 +21,9 @@ module domain_interface
 
     ! core model variables (not advected)
     real, allocatable :: exner(:,:,:)
-    real, allocatable :: pressure(:,:,:)
-    real, allocatable :: temperature(:,:,:)
-    real, allocatable :: z(:,:,:)
+    real, public, allocatable :: pressure(:,:,:)
+    real, public, allocatable :: temperature(:,:,:)
+    real, public, allocatable :: z(:,:,:)
     real, allocatable :: dz_interface(:,:,:)
     real, allocatable :: z_interface(:,:,:)
     real, allocatable :: dz_mass(:,:,:)
