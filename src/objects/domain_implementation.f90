@@ -48,18 +48,18 @@ contains
       local_nx = size(this%water_vapor%local, 3)   ! number of grid cells in x dimension (in local memory)
 
       associate(                                    &
-          surface_z=>0.0,                           &   ! elevation of the model surface    [m]
-          dz_value=>500.0,                          &   ! thickness of each model gridcell  [m]
-          surface_pressure=>100000.0)                   ! pressure at the first model level [Pa]
+          surface_z=>0.0,                           &   ! elevation of the first model level [m]
+          dz_value=>500.0,                          &   ! thickness of each model gridcell   [m]
+          surface_pressure=>100000.0)                   ! pressure at the first model level  [Pa]
         !   )
 
-          allocate(this%pressure(local_ny, local_nz, local_nx),         source=surface_pressure)
-          allocate(this%temperature(local_ny, local_nz, local_nx))
-          allocate(this%exner(local_ny, local_nz, local_nx))
-          allocate(this%z(local_ny, local_nz, local_nx),                source=surface_z + dz_value/2)
-          allocate(this%dz_interface(local_ny, local_nz, local_nx),     source=dz_value)
-          allocate(this%z_interface(local_ny, local_nz, local_nx),      source=surface_z)
-          allocate(this%dz_mass(local_ny, local_nz, local_nx),          source=dz_value)
+          allocate(this%pressure    (local_ny, local_nz, local_nx), source=surface_pressure)
+          allocate(this%temperature (local_ny, local_nz, local_nx))
+          allocate(this%exner       (local_ny, local_nz, local_nx))
+          allocate(this%z           (local_ny, local_nz, local_nx), source=surface_z + dz_value/2)
+          allocate(this%dz_interface(local_ny, local_nz, local_nx), source=dz_value)
+          allocate(this%z_interface (local_ny, local_nz, local_nx), source=surface_z)
+          allocate(this%dz_mass     (local_ny, local_nz, local_nx), source=dz_value)
 
           this%dz_mass(:,1,:) = this%dz_mass(:,1,:)/2
           this%exner(:,1,:) = exner_function(this%pressure(:,1,:))
@@ -199,6 +199,7 @@ contains
             q(2:nx-1,:,2:ny-1) = q(2:nx-1,:,2:ny-1)                                 &
                                + (uflux(1:nx-2,:,2:ny-1) - uflux(2:nx-1,:,2:ny-1))  &
                                + (vflux(2:nx-1,:,1:ny-2) - vflux(2:nx-1,:,2:ny-1))
+            ! vertical fluxes are handled separately
             q(2:nx-1,1:nz,2:ny-1) = q(2:nx-1,1:nz,2:ny-1) - wflux(2:nx-1,1:nz,2:ny-1)
             q(2:nx-1,2:nz,2:ny-1) = q(2:nx-1,2:nz,2:ny-1) + wflux(2:nx-1,1:nz-1,2:ny-1)
 
