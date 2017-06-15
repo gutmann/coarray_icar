@@ -7,22 +7,98 @@ contains
 
     subroutine master_initialize(this)
       class(domain_t), intent(inout) :: this
+      integer :: i, local_nx, local_ny, local_nz
 
       associate(                                           &
         u_test_val=>0.1, v_test_val=>0.2, w_test_val=>0.0, &
-        water_vapor_test_val=>0.1,                         &
+        water_vapor_test_val=>0.001,                       &
+        potential_temperature_test_val=>300.0,             &
+        cloud_water_mass_test_val=>0.0,                    &
+        cloud_ice_mass_test_val=>0.0,                      &
+        cloud_ice_number_test_val=>0.0,                    &
+        rain_mass_test_val=>0.0,                           &
+        rain_number_test_val=>0.0,                         &
+        snow_mass_test_val=>0.0,                           &
+        graupel_mass_test_val=>0.0,                        &
         nx=>this%nx, ny=>this%ny, nz=>this%nz )
 
         call this%u%initialize(this%get_grid_dimensions(nx_extra = 1), u_test_val)
         call this%v%initialize(this%get_grid_dimensions(ny_extra = 1), v_test_val)
         call this%w%initialize(this%get_grid_dimensions(), w_test_val)
-        print *,"call this%water_vapor%initialize(this%get_grid_dimensions(),water_vapor_test_val)"
-        call this%water_vapor%initialize(this%get_grid_dimensions(),water_vapor_test_val)
-        if (this_image()==1) then
-            this%water_vapor%local(:,1,1) = water_vapor_test_val * 2
-        endif
+        print *,"call this%variable%initialize(this%get_grid_dimensions(),variable_test_val)"
+        call this%water_vapor%initialize(           this%get_grid_dimensions(),water_vapor_test_val)
+        call this%potential_temperature%initialize( this%get_grid_dimensions(),potential_temperature_test_val)
+        call this%cloud_water_mass%initialize(      this%get_grid_dimensions(),cloud_water_mass_test_val)
+        call this%cloud_ice_mass%initialize(        this%get_grid_dimensions(),cloud_ice_mass_test_val)
+        call this%cloud_ice_number%initialize(      this%get_grid_dimensions(),cloud_ice_number_test_val)
+        call this%rain_mass%initialize(             this%get_grid_dimensions(),rain_mass_test_val)
+        call this%rain_number%initialize(           this%get_grid_dimensions(),rain_number_test_val)
+        call this%snow_mass%initialize(             this%get_grid_dimensions(),snow_mass_test_val)
+        call this%graupel_mass%initialize(          this%get_grid_dimensions(),graupel_mass_test_val)
+
+        ! Note, this can be used to create a change in water vapor at the upwind boundary so that it
+        ! can be advected across the domain and permitted to interact with other species
+        ! if (this_image()==1) then
+        !     this%water_vapor%local(:,1,1) = water_vapor_test_val * 2
+        ! endif
       end associate
+
+      local_ny = size(this%water_vapor%local, 1)   ! number of grid cells in y dimension (in local memory)
+      local_nz = size(this%water_vapor%local, 2)   ! number of grid cells in z dimension (in local memory)
+      local_nx = size(this%water_vapor%local, 3)   ! number of grid cells in x dimension (in local memory)
+
+      associate(                                    &
+          surface_z=>0.0,                           &   ! elevation of the model surface    [m]
+          dz_value=>500.0,                          &   ! thickness of each model gridcell  [m]
+          surface_pressure=>100000.0)                   ! pressure at the first model level [Pa]
+        !   )
+
+          allocate(this%pressure(local_ny, local_nz, local_nx),         source=surface_pressure)
+          allocate(this%temperature(local_ny, local_nz, local_nx))
+          allocate(this%exner(local_ny, local_nz, local_nx))
+          allocate(this%z(local_ny, local_nz, local_nx),                source=surface_z + dz_value/2)
+          allocate(this%dz_interface(local_ny, local_nz, local_nx),     source=dz_value)
+          allocate(this%z_interface(local_ny, local_nz, local_nx),      source=surface_z)
+          allocate(this%dz_mass(local_ny, local_nz, local_nx),          source=dz_value)
+
+          this%dz_mass(:,1,:) = this%dz_mass(:,1,:)/2
+          this%exner(:,1,:) = exner_function(this%pressure(:,1,:))
+          do i=2,local_nz
+              this%z(:,i,:)           = this%z(:,i-1,:)           + this%dz_mass(:,i,:)
+              this%z_interface(:,i,:) = this%z_interface(:,i-1,:) + this%dz_interface(:,i,:)
+
+              this%pressure(:,i,:)    = pressure_at_elevation(this%pressure(:,1,:), this%z(:,i,:))
+          enddo
+          this%exner       = exner_function(this%pressure)
+          this%temperature = this%exner * this%potential_temperature%local
+      end associate
+
     end subroutine
+
+    !> -------------------------------
+    !!
+    !! Convert p [Pa] at shifting it to a given elevatiom [m]
+    !!
+    !! -------------------------------
+    elemental function pressure_at_elevation(surface_pressure, elevation) result(pressure)
+        implicit none
+        real, intent(in) :: surface_pressure, elevation
+        real :: pressure
+
+        pressure = surface_pressure * (1 - 2.25577E-5 * elevation)**5.25588
+
+    end function
+
+    elemental function exner_function(pressure) result(exner)
+        implicit none
+        real, intent(in) :: pressure
+        real :: exner
+
+        associate(po=>100000, Rd=>287.058, cp=>1003.5)
+            exner = (pressure / po) ** (Rd/cp)
+
+        end associate
+    end function
 
     module subroutine initialize_from_file(this,file_name)
       class(domain_t), intent(inout) :: this
@@ -88,36 +164,68 @@ contains
     module subroutine halo_exchange(this)
       class(domain_t), intent(inout) :: this
       call this%water_vapor%exchange()
+      call this%potential_temperature%exchange()
+      call this%cloud_water_mass%exchange()
+      call this%cloud_ice_mass%exchange()
+      call this%cloud_ice_number%exchange()
+      call this%rain_mass%exchange()
+      call this%rain_number%exchange()
+      call this%snow_mass%exchange()
+      call this%graupel_mass%exchange()
     end subroutine
+
+    subroutine upwind(q, u,v,w, dt)
+        implicit none
+        real, intent(inout), dimension(:,:,:) :: q
+        real, intent(in),    dimension(:,:,:) :: u, v, w
+        real, intent(in)                      :: dt
+
+        real, allocatable :: uflux(:,:,:), vflux(:,:,:), wflux(:,:,:)
+
+        associate(nx=>size(q,1), &
+                  ny=>size(q,3), &
+                  nz=>size(q,2))
+
+            allocate(uflux(nx, nz, ny))
+            allocate(vflux(nx, nz, ny))
+            allocate(wflux(nx, nz, ny))
+
+            uflux = u(2:nx+1,:, :    ) * dt * q
+            vflux = v( :    ,:,2:ny+1) * dt * q
+            wflux = w( :    ,:, :    ) * dt * q
+
+            ! ultimately this will need to be more sophisticated, but for testing purposes this works
+            ! q = q + (inflow - outflow)
+            q(2:nx-1,:,2:ny-1) = q(2:nx-1,:,2:ny-1)                                 &
+                               + (uflux(1:nx-2,:,2:ny-1) - uflux(2:nx-1,:,2:ny-1))  &
+                               + (vflux(2:nx-1,:,1:ny-2) - vflux(2:nx-1,:,2:ny-1))
+            q(2:nx-1,1:nz,2:ny-1) = q(2:nx-1,1:nz,2:ny-1) - wflux(2:nx-1,1:nz,2:ny-1)
+            q(2:nx-1,2:nz,2:ny-1) = q(2:nx-1,2:nz,2:ny-1) + wflux(2:nx-1,1:nz-1,2:ny-1)
+
+        end associate
+
+    end subroutine upwind
 
     module subroutine advect(this, dt)
         class(domain_t), intent(inout) :: this
         real,            intent(in)    :: dt
-        real, allocatable :: uflux(:,:,:), vflux(:,:,:), wflux(:,:,:)
 
-        associate(nx=>size(this%water_vapor%local,1), &
-                  ny=>size(this%water_vapor%local,3), &
-                  nz=>size(this%water_vapor%local,2))
-          allocate(uflux(nx, nz, ny))
-          allocate(vflux(nx, nz, ny))
-        !   allocate(wflux(nx, nz, ny))
+        if (assertions) call assert(this%u%local >= 0, "Restrict wind u values for testing")
+        if (assertions) call assert(this%v%local >= 0, "Restrict wind v values for testing")
+        if (assertions) call assert(this%w%local == 0, "Restrict wind w values for testing")
 
-          if (assertions) call assert(this%u%local >= 0, "Restrict wind u values for testing")
-          if (assertions) call assert(this%v%local >= 0, "Restrict wind v values for testing")
-          if (assertions) call assert(this%w%local == 0, "Restrict wind w values for testing")
-
-          uflux = this%u%local(2:nx+1,:, :    ) * dt * this%water_vapor%local
-          vflux = this%v%local( :    ,:,2:ny+1) * dt * this%water_vapor%local
-
-          !   wflux = this%w( :    ,:, :    ) * dt * this%water_vapor%local
-          ! since we assert w==0 this is irrelevant for now
-
-          ! ultimately this will need to be more sophisticated, but for testing purposes this works
-          ! q = q + (inflow - outflow)
-          this%water_vapor%local(2:nx-1,:,2:ny-1) = this%water_vapor%local(2:nx-1,:,2:ny-1)         &
-                                              + (uflux(1:nx-2,:,2:ny-1) - uflux(2:nx-1,:,2:ny-1))   &
-                                              + (vflux(2:nx-1,:,1:ny-2) - vflux(2:nx-1,:,2:ny-1))
-
+        associate(u=>this%u%local, &
+                  v=>this%v%local, &
+                  w=>this%w%local)
+            call upwind(this%water_vapor%local,             u, v, w, dt)
+            call upwind(this%potential_temperature%local,   u, v, w, dt)
+            call upwind(this%cloud_water_mass%local,        u, v, w, dt)
+            call upwind(this%cloud_ice_mass%local,          u, v, w, dt)
+            call upwind(this%cloud_ice_number%local,        u, v, w, dt)
+            call upwind(this%rain_mass%local,               u, v, w, dt)
+            call upwind(this%rain_number%local,             u, v, w, dt)
+            call upwind(this%snow_mass%local,               u, v, w, dt)
+            call upwind(this%graupel_mass%local,            u, v, w, dt)
         end associate
 
     end subroutine

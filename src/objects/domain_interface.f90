@@ -8,8 +8,26 @@ module domain_interface
 
   type domain_t
     private
-    ! water vapor field to be advected
+    ! core model species to be advected
     type(exchangeable_t) :: water_vapor
+    type(exchangeable_t) :: potential_temperature
+    type(exchangeable_t) :: cloud_water_mass
+    type(exchangeable_t) :: cloud_ice_mass
+    type(exchangeable_t) :: cloud_ice_number
+    type(exchangeable_t) :: rain_mass
+    type(exchangeable_t) :: rain_number
+    type(exchangeable_t) :: snow_mass
+    type(exchangeable_t) :: graupel_mass
+
+    ! core model variables (not advected)
+    real, allocatable :: exner(:,:,:)
+    real, allocatable :: pressure(:,:,:)
+    real, allocatable :: temperature(:,:,:)
+    real, allocatable :: z(:,:,:)
+    real, allocatable :: dz_interface(:,:,:)
+    real, allocatable :: z_interface(:,:,:)
+    real, allocatable :: dz_mass(:,:,:)
+
     ! wind field to control advection
     type(exchangeable_t) :: u
     type(exchangeable_t) :: v
