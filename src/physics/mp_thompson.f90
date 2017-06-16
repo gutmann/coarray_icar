@@ -344,8 +344,8 @@
       INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
       INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
       REAL (KIND=R8SIZE), ALLOCATABLE, DIMENSION(:,:,:,:)::             &
-                tcg_racg, tmr_racg, tcr_gacr, tmg_gacr,                 &
-                tnr_racg, tnr_gacr
+                tcg_racg[:], tmr_racg[:], tcr_gacr[:], tmg_gacr[:],     &
+                tnr_racg[:], tnr_gacr[:]
       REAL (KIND=R8SIZE), ALLOCATABLE, DIMENSION(:,:,:,:)::             &
                 tcs_racs1, tmr_racs1, tcs_racs2, tmr_racs2,             &
                 tcr_sacr1, tms_sacr1, tcr_sacr2, tms_sacr2,             &
@@ -550,15 +550,15 @@
 !..Allocate space for lookup tables (J. Michalakes 2009Jun08).
 
       if (.NOT. ALLOCATED(tcg_racg) ) then
-         ALLOCATE(tcg_racg(ntb_g1,ntb_g,ntb_r1,ntb_r))
+         ALLOCATE(tcg_racg(ntb_g1,ntb_g,ntb_r1,ntb_r)[*])
          micro_init = .TRUE.
       endif
 
-      if (.NOT. ALLOCATED(tmr_racg)) ALLOCATE(tmr_racg(ntb_g1,ntb_g,ntb_r1,ntb_r))
-      if (.NOT. ALLOCATED(tcr_gacr)) ALLOCATE(tcr_gacr(ntb_g1,ntb_g,ntb_r1,ntb_r))
-      if (.NOT. ALLOCATED(tmg_gacr)) ALLOCATE(tmg_gacr(ntb_g1,ntb_g,ntb_r1,ntb_r))
-      if (.NOT. ALLOCATED(tnr_racg)) ALLOCATE(tnr_racg(ntb_g1,ntb_g,ntb_r1,ntb_r))
-      if (.NOT. ALLOCATED(tnr_gacr)) ALLOCATE(tnr_gacr(ntb_g1,ntb_g,ntb_r1,ntb_r))
+      if (.NOT. ALLOCATED(tmr_racg)) ALLOCATE(tmr_racg(ntb_g1,ntb_g,ntb_r1,ntb_r)[*])
+      if (.NOT. ALLOCATED(tcr_gacr)) ALLOCATE(tcr_gacr(ntb_g1,ntb_g,ntb_r1,ntb_r)[*])
+      if (.NOT. ALLOCATED(tmg_gacr)) ALLOCATE(tmg_gacr(ntb_g1,ntb_g,ntb_r1,ntb_r)[*])
+      if (.NOT. ALLOCATED(tnr_racg)) ALLOCATE(tnr_racg(ntb_g1,ntb_g,ntb_r1,ntb_r)[*])
+      if (.NOT. ALLOCATED(tnr_gacr)) ALLOCATE(tnr_gacr(ntb_g1,ntb_g,ntb_r1,ntb_r)[*])
 
       if (.NOT. ALLOCATED(tcs_racs1)) ALLOCATE(tcs_racs1(ntb_s,ntb_t,ntb_r1,ntb_r))
       if (.NOT. ALLOCATED(tmr_racs1)) ALLOCATE(tmr_racs1(ntb_s,ntb_t,ntb_r1,ntb_r))
@@ -3586,8 +3586,9 @@
       DOUBLE PRECISION:: massg, massr, dvg, dvr, t1, t2, z1, z2, y1, y2
       LOGICAL force_read_thompson, write_thompson_tables
       LOGICAL lexist,lopen
-      INTEGER good
+      INTEGER, allocatable :: good[:]
     !   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+      allocate(good[*])
 
 !+---+
 
@@ -3595,58 +3596,41 @@
     !   CALL nl_get_write_thompson_tables(1,write_thompson_tables)
 
       good = 0
- !      IF ( wrf_dm_on_monitor() ) THEN
- !        INQUIRE(FILE="qr_acr_qg.dat",EXIST=lexist)
- !        IF ( lexist ) THEN
- !        !   CALL wrf_message("ThompMP: read qr_acr_qg.dat stead of computing")
- !          OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=1234)
- !          READ(63,err=1234) tcg_racg
- !          READ(63,err=1234) tmr_racg
- !          READ(63,err=1234) tcr_gacr
- !          READ(63,err=1234) tmg_gacr
- !          READ(63,err=1234) tnr_racg
- !          READ(63,err=1234) tnr_gacr
- !          good = 1
- ! 1234     CONTINUE
- !          IF ( good .NE. 1 ) THEN
- !            INQUIRE(63,opened=lopen)
- !            IF (lopen) THEN
- !              IF( force_read_thompson ) THEN
- !                CALL wrf_error_fatal("Error reading qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
- !              ENDIF
- !              CLOSE(63)
- !            ELSE
- !              IF( force_read_thompson ) THEN
- !                CALL wrf_error_fatal("Error opening qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
- !              ENDIF
- !            ENDIF
- !         ELSE
- !            INQUIRE(63,opened=lopen)
- !            IF (lopen) THEN
- !              CLOSE(63)
- !            ENDIF
- !          ENDIF
- !        ELSE
- !          IF( force_read_thompson ) THEN
- !            CALL wrf_error_fatal("Non-existent qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
- !          ENDIF
- !        ENDIF
- !      ENDIF
-! #if defined(DM_PARALLEL) && !defined(STUBMPI)
-!       CALL wrf_dm_bcast_integer(good,1)
-! #endif
+      if (this_image()==1) then
+          INQUIRE(FILE="qr_acr_qg.dat",EXIST=lexist)
+          IF ( lexist ) THEN
+            print *, "ThompMP: read qr_acr_qg.dat stead of computing"
+            OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=1234)
+            READ(63,err=1234) tcg_racg
+            READ(63,err=1234) tmr_racg
+            READ(63,err=1234) tcr_gacr
+            READ(63,err=1234) tmg_gacr
+            READ(63,err=1234) tnr_racg
+            READ(63,err=1234) tnr_gacr
+            good = 1
+     1234   CONTINUE
+            INQUIRE(63,opened=lopen)
+            IF (lopen) THEN
+              CLOSE(63)
+            ENDIF
 
-      IF ( good .EQ. 1 ) THEN
-! #if defined(DM_PARALLEL) && !defined(STUBMPI)
-!         CALL wrf_dm_bcast_double(tcg_racg,SIZE(tcg_racg))
-!         CALL wrf_dm_bcast_double(tmr_racg,SIZE(tmr_racg))
-!         CALL wrf_dm_bcast_double(tcr_gacr,SIZE(tcr_gacr))
-!         CALL wrf_dm_bcast_double(tmg_gacr,SIZE(tmg_gacr))
-!         CALL wrf_dm_bcast_double(tnr_racg,SIZE(tnr_racg))
-!         CALL wrf_dm_bcast_double(tnr_gacr,SIZE(tnr_gacr))
-! #endif
-      ELSE
-        ! CALL wrf_message("ThompMP: computing qr_acr_qg")
+            ! broadcast the data to all images
+            do i=2,num_images()
+                good[i]     = good
+                tcg_racg(:,:,:,:)[i] = tcg_racg(:,:,:,:)
+                tmr_racg(:,:,:,:)[i] = tmr_racg(:,:,:,:)
+                tcr_gacr(:,:,:,:)[i] = tcr_gacr(:,:,:,:)
+                tmg_gacr(:,:,:,:)[i] = tmg_gacr(:,:,:,:)
+                tnr_racg(:,:,:,:)[i] = tnr_racg(:,:,:,:)
+                tnr_gacr(:,:,:,:)[i] = tnr_gacr(:,:,:,:)
+            enddo
+          ENDIF
+      endif
+
+      sync all()
+
+      IF ( good .NE. 1 ) THEN
+        print *, "ThompMP: computing qr_acr_qg"
         do n2 = 1, nbr
 !        vr(n2) = av_r*Dr(n2)**bv_r * DEXP(-fv_r*Dr(n2))
          vr(n2) = -0.1021 + 4.932E3*Dr(n2) - 0.9551E6*Dr(n2)*Dr(n2)     &
@@ -3738,20 +3722,20 @@
 !         CALL wrf_dm_gatherv(tnr_gacr, ntb_g*ntb_g1, km_s, km_e, R8SIZE)
 ! #endif
 
- !        IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
- !          CALL wrf_message("Writing qr_acr_qg.dat in Thompson MP init")
- !          OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=9234)
- !          WRITE(63,err=9234) tcg_racg
- !          WRITE(63,err=9234) tmr_racg
- !          WRITE(63,err=9234) tcr_gacr
- !          WRITE(63,err=9234) tmg_gacr
- !          WRITE(63,err=9234) tnr_racg
- !          WRITE(63,err=9234) tnr_gacr
- !          CLOSE(63)
- !          RETURN    ! ----- RETURN
- ! 9234     CONTINUE
- !          CALL wrf_error_fatal("Error writing qr_acr_qg.dat")
- !        ENDIF
+        IF ( this_image()==1 ) THEN
+          print *, "Writing qr_acr_qg.dat in Thompson MP init"
+          OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=9234)
+          WRITE(63,err=9234) tcg_racg
+          WRITE(63,err=9234) tmr_racg
+          WRITE(63,err=9234) tcr_gacr
+          WRITE(63,err=9234) tmg_gacr
+          WRITE(63,err=9234) tnr_racg
+          WRITE(63,err=9234) tnr_gacr
+          CLOSE(63)
+          RETURN    ! ----- RETURN
+ 9234     CONTINUE
+          print *, ("Error writing qr_acr_qg.dat")
+        ENDIF
       ENDIF
 
       end subroutine qr_acr_qg
