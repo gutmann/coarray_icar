@@ -2,6 +2,7 @@ program main
   use iso_fortran_env, only : input_unit
   use domain_interface, only : domain_t
   use assertions_interface, only : assert
+  use module_mp_driver, only: microphysics
   implicit none
 
   if (this_image()==1) print *,"Number of images = ",num_images()
@@ -30,6 +31,10 @@ program main
 
     print *,"domain%halo_exchange()"
     call domain%halo_exchange()
+
+    print *,"Microphysics"
+    ! note this should be wrapped into the domain object(?)
+    call microphysics(domain)
   end block
 
  print *,"Test passed."
