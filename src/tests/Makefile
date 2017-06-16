@@ -19,6 +19,8 @@ ifeq ($(compiler),gnu)
   compile := caf
   opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
   link_flags := -fcheck=all -Wall -fbacktrace -g
+  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+  link_flags := -Ofast
   lib :=
 else
   ifeq ($(compiler),intel)
@@ -31,8 +33,8 @@ else
 endif
 link := $(compile)
 
-objects_dir=../objects/
-utilities=../utilities/
+objects_dir=../objects
+utilities=../utilities
 physics=../physics
 tests_dir=.
 
@@ -74,6 +76,9 @@ test-initialization.o: domain_interface.o assertions_interface.o mp_driver.o
 assertions_implementation.o: assertions_interface.o
 
 domain_interface.o: configuration_interface.o exchangeable_interface.o
+
+exchangeable_implementation.o: exchangeable_interface.o
+configuration_implementation.o: configuration_interface.o
 
 domain_implementation.o: domain_interface.o assertions_interface.o
 
