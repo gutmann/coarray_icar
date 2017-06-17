@@ -7,10 +7,11 @@ contains
 
     subroutine master_initialize(this)
       class(domain_t), intent(inout) :: this
-      integer :: i, local_nx, local_ny, local_nz
+      integer :: i
+      real :: sine_curve
 
       associate(                                           &
-        u_test_val=>0.1, v_test_val=>0.2, w_test_val=>0.0, &
+        u_test_val=>0.5, v_test_val=>0.0, w_test_val=>0.0, &
         water_vapor_test_val=>0.001,                       &
         potential_temperature_test_val=>300.0,             &
         cloud_water_mass_test_val=>0.0,                    &
@@ -25,7 +26,7 @@ contains
         call this%u%initialize(this%get_grid_dimensions(nx_extra = 1), u_test_val)
         call this%v%initialize(this%get_grid_dimensions(ny_extra = 1), v_test_val)
         call this%w%initialize(this%get_grid_dimensions(), w_test_val)
-        print *,"call this%variable%initialize(this%get_grid_dimensions(),variable_test_val)"
+        if (this_image()==1) print *,"call this%variable%initialize(this%get_grid_dimensions(),variable_test_val)"
         call this%water_vapor%initialize(           this%get_grid_dimensions(),water_vapor_test_val)
         call this%potential_temperature%initialize( this%get_grid_dimensions(),potential_temperature_test_val)
         call this%cloud_water_mass%initialize(      this%get_grid_dimensions(),cloud_water_mass_test_val)
@@ -36,6 +37,7 @@ contains
         call this%snow_mass%initialize(             this%get_grid_dimensions(),snow_mass_test_val)
         call this%graupel_mass%initialize(          this%get_grid_dimensions(),graupel_mass_test_val)
 
+        this%potential_temperature%local(1,:,:)=this%potential_temperature%local(1,:,:)-10
         ! Note, this can be used to create a change in water vapor at the upwind boundary so that it
         ! can be advected across the domain and permitted to interact with other species
         ! if (this_image()==1) then
@@ -43,37 +45,128 @@ contains
         ! endif
       end associate
 
-      local_ny = size(this%water_vapor%local, 1)   ! number of grid cells in y dimension (in local memory)
-      local_nz = size(this%water_vapor%local, 2)   ! number of grid cells in z dimension (in local memory)
-      local_nx = size(this%water_vapor%local, 3)   ! number of grid cells in x dimension (in local memory)
+      ! this permits arrays to have starting indices that are not 1
+      this%ims = lbound(this%water_vapor%local,1)
+      this%kms = lbound(this%water_vapor%local,2)
+      this%jms = lbound(this%water_vapor%local,3)
+      this%ime = ubound(this%water_vapor%local,1)
+      this%kme = ubound(this%water_vapor%local,2)
+      this%jme = ubound(this%water_vapor%local,3)
+
+      ! initially set the tile to process to be set in one from the edges of memory
+      if (assertions) call assert((this%ime - this%ims) > 3, "x dimension has too few elements")
+      if (assertions) call assert((this%jme - this%jms) > 3, "y dimension has too few elements")
+      if (assertions) call assert((this%kme - this%kms) > 3, "z dimension has too few elements")
+      this%its = this%ims + 1
+      this%jts = this%jms + 1
+      this%kts = this%kms
+      this%ite = this%ime
+      this%jte = this%jme - 1
+      this%kte = this%kme - 1
+
+      ! The entire model domain begins at 1 and ends at nx,y,z
+      this%ids = 1
+      this%jds = 1
+      this%kds = 1
+      this%ide = this%nx
+      this%jde = this%ny
+      this%kde = this%nz
 
       associate(                                    &
           surface_z=>0.0,                           &   ! elevation of the first model level [m]
           dz_value=>500.0,                          &   ! thickness of each model gridcell   [m]
-          surface_pressure=>100000.0)                   ! pressure at the first model level  [Pa]
-        !   )
+          surface_pressure=>100000.0,               &   ! pressure at the first model level  [Pa]
+          ims=>this%ims, ime=>this%ime,             &
+          jms=>this%jms, jme=>this%jme,             &
+          kms=>this%kms, kme=>this%kme,             &
+          hill_height=>1000.0                       &
+          )
 
-          allocate(this%pressure    (local_ny, local_nz, local_nx), source=surface_pressure)
-          allocate(this%temperature (local_ny, local_nz, local_nx))
-          allocate(this%exner       (local_ny, local_nz, local_nx))
-          allocate(this%z           (local_ny, local_nz, local_nx), source=surface_z + dz_value/2)
-          allocate(this%dz_interface(local_ny, local_nz, local_nx), source=dz_value)
-          allocate(this%z_interface (local_ny, local_nz, local_nx), source=surface_z)
-          allocate(this%dz_mass     (local_ny, local_nz, local_nx), source=dz_value)
+          allocate(this%accumulated_precipitation(ims:ime, jms:jme), source=0.)
+          allocate(this%accumulated_snowfall     (ims:ime, jms:jme), source=0.)
+          allocate(this%pressure                 (ims:ime, kms:kme, jms:jme), source=surface_pressure)
+          allocate(this%temperature              (ims:ime, kms:kme, jms:jme))
+          allocate(this%exner                    (ims:ime, kms:kme, jms:jme))
+          allocate(this%z                        (ims:ime, kms:kme, jms:jme))
+          allocate(this%dz_interface             (ims:ime, kms:kme, jms:jme), source=dz_value)
+          allocate(this%z_interface              (ims:ime, kms:kme, jms:jme))
+          allocate(this%dz_mass                  (ims:ime, kms:kme, jms:jme), source=dz_value)
 
-          this%dz_mass(:,1,:) = this%dz_mass(:,1,:)/2
-          this%exner(:,1,:) = exner_function(this%pressure(:,1,:))
-          do i=2,local_nz
+          ! this is a simple sine function for a hill... not the best test case but it's easy
+          do i=ims,ime
+              sine_curve = (sin((i-ims)/real(ime-ims) * 2*3.14159 - 3.14159/2) + 1)
+              this%z_interface(i,kms,:) = surface_z + sine_curve * hill_height
+          enddo
+          this%z(:,kms,:) = this%z_interface(:,kms,:) + dz_value/2
+
+          this%dz_mass(:,kms,:)     = this%dz_mass(:,kms,:)/2
+          this%pressure(:,kms,:)    = pressure_at_elevation(surface_pressure, this%z(:,kms,:))
+          do i=kms+1,kme
               this%z(:,i,:)           = this%z(:,i-1,:)           + this%dz_mass(:,i,:)
               this%z_interface(:,i,:) = this%z_interface(:,i-1,:) + this%dz_interface(:,i,:)
-
-              this%pressure(:,i,:)    = pressure_at_elevation(this%pressure(:,1,:), this%z(:,i,:))
+              this%pressure(:,i,:)    = pressure_at_elevation(surface_pressure, this%z(:,i,:))
           enddo
           this%exner       = exner_function(this%pressure)
           this%temperature = this%exner * this%potential_temperature%local
+          this%water_vapor%local = sat_mr(this%temperature,this%pressure)
       end associate
 
     end subroutine
+
+
+    !>----------------------------------------------------------
+    !!  Calculate the saturated mixing ratio for a given temperature and pressure
+    !!
+    !!  If temperature > 0C: returns the saturated mixing ratio with respect to liquid
+    !!  If temperature < 0C: returns the saturated mixing ratio with respect to ice
+    !!
+    !!  @param temperature  Air Temperature [K]
+    !!  @param pressure     Air Pressure [Pa]
+    !!  @retval sat_mr      Saturated water vapor mixing ratio [kg/kg]
+    !!
+    !!  @see http://www.dtic.mil/dtic/tr/fulltext/u2/778316.pdf
+    !!   Lowe, P.R. and J.M. Ficke., 1974: The Computation of Saturation Vapor Pressure
+    !!   Environmental Prediction Research Facility, Technical Paper No. 4-74
+    !!
+    !!----------------------------------------------------------
+    elemental function sat_mr(temperature,pressure)
+    ! Calculate the saturated mixing ratio at a temperature (K), pressure (Pa)
+        implicit none
+        real,intent(in) :: temperature,pressure
+        real :: e_s,a,b
+        real :: sat_mr
+
+        ! from http://www.dtic.mil/dtic/tr/fulltext/u2/778316.pdf
+        !   Lowe, P.R. and J.M. Ficke., 1974: THE COMPUTATION OF SATURATION VAPOR PRESSURE
+        !       Environmental Prediction Research Facility, Technical Paper No. 4-74
+        ! which references:
+        !   Murray, F. W., 1967: On the computation of saturation vapor pressure.
+        !       Journal of Applied Meteorology, Vol. 6, pp. 203-204.
+        ! Also notes a 6th order polynomial and look up table as viable options.
+        if (temperature < 273.15) then
+            a = 21.8745584
+            b = 7.66
+        else
+            a = 17.2693882
+            b = 35.86
+        endif
+
+        e_s = 610.78 * exp(a * (temperature - 273.16) / (temperature - b)) !(Pa)
+
+        ! alternate formulations
+        ! Polynomial:
+        ! e_s = ao + t*(a1+t*(a2+t*(a3+t*(a4+t*(a5+a6*t))))) a0-6 defined separately for water and ice
+        ! e_s = 611.2*exp(17.67*(t-273.15)/(t-29.65)) ! (Pa)
+        ! from : http://www.srh.noaa.gov/images/epz/wxcalc/vaporPressure.pdf
+        ! e_s = 611.0*10.0**(7.5*(t-273.15)/(t-35.45))
+
+
+        if ((pressure - e_s) <= 0) then
+            e_s = pressure * 0.99999
+        endif
+        ! from : http://www.srh.noaa.gov/images/epz/wxcalc/mixingRatio.pdf
+        sat_mr = 0.6219907 * e_s / (pressure - e_s) !(kg/kg)
+    end function sat_mr
 
     !> -------------------------------
     !!
@@ -89,6 +182,11 @@ contains
 
     end function
 
+    !> -------------------------------
+    !!
+    !! Compute exner function to convert potential_temperature to temperature
+    !!
+    !! -------------------------------
     elemental function exner_function(pressure) result(exner)
         implicit none
         real, intent(in) :: pressure
@@ -123,7 +221,7 @@ contains
       this%nx = nx
       this%ny = my_ny(ny)
       this%nz = nz
-      print *,"call master_initialize(this)"
+      if (this_image()==1) print *,"call master_initialize(this)"
       call master_initialize(this)
     end subroutine
 
@@ -161,6 +259,20 @@ contains
 
     end function
 
+    module subroutine enforce_limits(this)
+      class(domain_t), intent(inout) :: this
+      where(this%water_vapor%local < 0)             this%water_vapor%local = 0
+      where(this%potential_temperature%local < 0)   this%potential_temperature%local = 0
+      where(this%cloud_water_mass%local < 0)        this%cloud_water_mass%local = 0
+      where(this%cloud_ice_mass%local < 0)          this%cloud_ice_mass%local = 0
+      where(this%cloud_ice_number%local < 0)        this%cloud_ice_number%local = 0
+      where(this%rain_mass%local < 0)               this%rain_mass%local = 0
+      where(this%rain_number%local < 0)             this%rain_number%local = 0
+      where(this%snow_mass%local < 0)               this%snow_mass%local = 0
+      where(this%graupel_mass%local < 0)            this%graupel_mass%local = 0
+
+    end subroutine
+
     module subroutine halo_exchange(this)
       class(domain_t), intent(inout) :: this
       call this%water_vapor%exchange()
@@ -186,9 +298,9 @@ contains
                   ny=>size(q,3), &
                   nz=>size(q,2))
 
-            allocate(uflux(nx, nz, ny))
-            allocate(vflux(nx, nz, ny))
-            allocate(wflux(nx, nz, ny))
+            allocate(uflux(nx, nz, ny), source=0.)
+            allocate(vflux(nx, nz, ny), source=0.)
+            allocate(wflux(nx, nz, ny), source=0.)
 
             uflux = u(2:nx+1,:, :    ) * dt * q
             vflux = v( :    ,:,2:ny+1) * dt * q

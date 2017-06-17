@@ -1031,7 +1031,7 @@
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: &
                           nc, nwfa, nifa
       REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nwfa2d
-      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: &
                           re_cloud, re_ice, re_snow
       INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 ! #if ( WRF_CHEM == 1 )
@@ -1041,13 +1041,13 @@
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
                           pii, p, w, dz
       REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT):: &
-                          RAINNC, RAINNCV, SR
+                          RAINNC
       REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT)::      &
-                          SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV
-      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::       &
+                          RAINNCV, SR, SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT)::       &
                           refl_10cm
       REAL, INTENT(IN):: dt_in
-      INTEGER, INTENT(IN):: itimestep
+      INTEGER, optional, INTENT(IN):: itimestep
 
 !..Local variables
       REAL, DIMENSION(kts:kte):: &
@@ -1135,14 +1135,10 @@
          pptsnow = 0.
          pptgraul = 0.
          pptice = 0.
-         RAINNCV(i,j) = 0.
-         IF ( PRESENT (snowncv) ) THEN
-            SNOWNCV(i,j) = 0.
-         ENDIF
-         IF ( PRESENT (graupelncv) ) THEN
-            GRAUPELNCV(i,j) = 0.
-         ENDIF
-         SR(i,j) = 0.
+         IF ( PRESENT (RAINNCV) )    RAINNCV(i,j) = 0.
+         IF ( PRESENT (snowncv) )    SNOWNCV(i,j) = 0.
+         IF ( PRESENT (graupelncv) ) GRAUPELNCV(i,j) = 0.
+         IF ( PRESENT (SR) )         SR(i,j) = 0.
 
          do k = kts, kte
             t1d(k) = th(i,k,j)*pii(i,k,j)
@@ -1187,7 +1183,7 @@
          pcp_sn(i,j) = pptsnow
          pcp_gr(i,j) = pptgraul
          pcp_ic(i,j) = pptice
-         RAINNCV(i,j) = pptrain + pptsnow + pptgraul + pptice
+         IF ( PRESENT (RAINNCV) )RAINNCV(i,j) = pptrain + pptsnow + pptgraul + pptice
          RAINNC(i,j) = RAINNC(i,j) + pptrain + pptsnow + pptgraul + pptice
          IF ( PRESENT(snowncv) .AND. PRESENT(snownc) ) THEN
             SNOWNCV(i,j) = pptsnow + pptice
@@ -1197,7 +1193,7 @@
             GRAUPELNCV(i,j) = pptgraul
             GRAUPELNC(i,j) = GRAUPELNC(i,j) + pptgraul
          ENDIF
-         SR(i,j) = (pptsnow + pptgraul + pptice)/(RAINNCV(i,j)+1.e-12)
+         IF ( PRESENT(SR) )SR(i,j) = (pptsnow + pptgraul + pptice)/(pptrain + pptsnow + pptgraul + pptice+1.e-12)
 
 
 
@@ -1303,14 +1299,15 @@
             !  write(mp_debug,*) 'WARNING, negative qv ', qv1d(k),        &
             !             ' at i,j,k=', i,j,k
             !  CALL wrf_debug(150, mp_debug)
-            !  if (k.lt.kte-2 .and. k.gt.kts+1) then
+             if (k.lt.kte-2 .and. k.gt.kts+1) then
             !     write(mp_debug,*) '   below and above are: ', qv(i,k-1,j), qv(i,k+1,j)
             !     CALL wrf_debug(150, mp_debug)
                 qv(i,k,j) = MAX(1.E-7, 0.5*(qv(i,k-1,j) + qv(i,k+1,j)))
              else
                 qv(i,k,j) = 1.E-7
              endif
-            ! endif
+
+            endif
          enddo
 
         !  IF ( PRESENT (diagflag) ) THEN
@@ -1332,9 +1329,9 @@
           call calc_effectRad (t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d,  &
                       re_qc1d, re_qi1d, re_qs1d, kts, kte)
           do k = kts, kte
-             re_cloud(i,k,j) = MAX(2.49E-6, MIN(re_qc1d(k), 50.E-6))
-             re_ice(i,k,j)   = MAX(4.99E-6, MIN(re_qi1d(k), 125.E-6))
-             re_snow(i,k,j)  = MAX(9.99E-6, MIN(re_qs1d(k), 999.E-6))
+             if (present(re_cloud)) re_cloud(i,k,j) = MAX(2.49E-6, MIN(re_qc1d(k), 50.E-6))
+             if (present(re_ice))   re_ice(i,k,j)   = MAX(4.99E-6, MIN(re_qi1d(k), 125.E-6))
+             if (present(re_snow))  re_snow(i,k,j)  = MAX(9.99E-6, MIN(re_qs1d(k), 999.E-6))
           enddo
          ENDIF
 
@@ -4069,7 +4066,7 @@
       sync all()
 
       IF ( good .NE. 1 ) THEN
-        print *, "ThompMP: computing freezeH2O"
+        if (this_image()==1) print *, "ThompMP: computing freezeH2O"
 
         orho_w = 1./rho_w
 

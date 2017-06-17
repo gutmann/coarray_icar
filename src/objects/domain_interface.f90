@@ -7,7 +7,7 @@ module domain_interface
   public :: domain_t
 
   type domain_t
-    private
+    ! private
     ! core model species to be advected
     type(exchangeable_t) :: water_vapor
     type(exchangeable_t) :: potential_temperature
@@ -20,13 +20,15 @@ module domain_interface
     type(exchangeable_t) :: graupel_mass
 
     ! core model variables (not advected)
-    real, allocatable :: exner(:,:,:)
+    real, public, allocatable :: exner(:,:,:)
     real, public, allocatable :: pressure(:,:,:)
     real, public, allocatable :: temperature(:,:,:)
     real, public, allocatable :: z(:,:,:)
-    real, allocatable :: dz_interface(:,:,:)
+    real, public, allocatable :: dz_interface(:,:,:)
     real, allocatable :: z_interface(:,:,:)
     real, allocatable :: dz_mass(:,:,:)
+    real, allocatable :: accumulated_precipitation(:,:)
+    real, allocatable :: accumulated_snowfall(:,:)
 
     ! wind field to control advection
     type(exchangeable_t) :: u
@@ -36,6 +38,11 @@ module domain_interface
     ! contains the size of the domain (or the local tile?)
     integer :: nx, ny, nz
 
+    ! store the start (s) and end (e) for the i,j,k dimensions
+    integer ::  ids,ide, jds,jde, kds,kde, & ! for the entire model domain    (d)
+                ims,ime, jms,jme, kms,kme, & ! for the memory in these arrays (m)
+                its,ite, jts,jte, kts,kte    ! for the data tile to process   (t)
+
     type(configuration_t) :: domain_configuration
   contains
     procedure :: default_initialize
@@ -43,6 +50,7 @@ module domain_interface
     procedure :: initialize_from_file
     procedure :: advect
     procedure :: halo_exchange
+    procedure :: enforce_limits
    !generic :: read(formatted)=>initialize_from_file
    !procedure, private :: initialize_with_configuration
    !procedure :: update_boundary
@@ -67,6 +75,12 @@ module domain_interface
 
     ! Exchange subdomain boundary information
     module subroutine halo_exchange(this)
+      implicit none
+      class(domain_t), intent(inout) :: this
+    end subroutine
+
+    ! Make sure no hydrometeors are getting below 0
+    module subroutine enforce_limits(this)
       implicit none
       class(domain_t), intent(inout) :: this
     end subroutine

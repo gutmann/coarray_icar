@@ -9,7 +9,7 @@ program main
 
   block
     type(domain_t) :: domain
-    print *,"domain%default_initialize()"
+    if (this_image()==1) print *,"domain%default_initialize()"
     call domain%default_initialize()
   end block
 
@@ -21,21 +21,31 @@ program main
 
     if (this_image()==1) then
         nz = size(domain%pressure,2)
+        print *, " Layer height       Pressure        Temperature      Water Vapor"
+        print *, "     [m]              [hPa]             [K]            [kg/kg]"
         do i=nz,1,-1
-            print *,domain%z(1,i,1), domain%pressure(1,i,1)/100, domain%temperature(1,i,1)
+            print *,domain%z(1,i,1), domain%pressure(1,i,1)/100, domain%temperature(1,i,1), domain%water_vapor%local(1,i,1)
         end do
     endif
 
-   print *,"domain%advect(dt = 4.0)"
-   call domain%advect(dt = 4.0)
+    do i=1,200
+        ! print *,"Microphysics"
+        ! note this should be wrapped into the domain object(?)
+        call microphysics(domain, dt = 20.0)
+        ! print *,"domain%advect(dt = 4.0)"
+        call domain%advect(dt = 1.0)
 
-    print *,"domain%halo_exchange()"
-    call domain%halo_exchange()
 
-    print *,"Microphysics"
-    ! note this should be wrapped into the domain object(?)
-    call microphysics(domain)
+        ! print *,"domain%halo_exchange()"
+        call domain%halo_exchange()
+
+        if (this_image()==1) then
+            print*, i, domain%accumulated_precipitation(::20,2)
+        endif
+        ! call domain%enforce_limits()
+    end do
+
   end block
 
- print *,"Test passed."
+ if (this_image()==1) print *,"Test passed."
 end program
