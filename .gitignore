@@ -16,6 +16,7 @@ test-initialization
 *.[mod]  # Fortran module interface information
 *.[smod] # Fortran submodule interface information
 *.smod
+*.dsym
 
 
 # =========================
