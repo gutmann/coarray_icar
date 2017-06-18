@@ -25,7 +25,7 @@ module assertions_interface
   
 ! Set the USE_ASSERTIONS constant below using the C preprocessor:
 !
-!    gfortran -DUSE_ASSERTIONS=.false. -c assertions_interface.F90 
+!    gfortran -cpp -DUSE_ASSERTIONS=.false. -c assertions_interface.f90 
 !
 ! or set the corresponding NO_ASSERTIONS variable defined in this directory's CMakeLists.txt:
 !

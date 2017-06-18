@@ -29,5 +29,68 @@
 *.out
 *.app
 
+# =============================
+# Developer-created directories
+# =============================
+build
+doc
+
+# =========================
+# Compiler-generated files
+# =========================
+*.[oa]   # object files and static libraries
+*.[mod]  # Fortran module interface information
+*.[smod] # Fortran submodule interface information
+
 test-initialization
 input-parameters.txt
+
+
+# =========================
+# Operating System Files
+# =========================
+
+# macOS
+# =========================
+
+.DS_Store    # Finder display formatting
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Temporary files from Microsoft Word or Excel
+Documents/Transient\ Documents/~$ansientSolution.docx
+.tmp
+
+# Windows image file caches
+# =========================
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
