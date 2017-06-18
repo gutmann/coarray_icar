@@ -12,21 +12,23 @@ endif
 executable := test-initialization
 # Options: gnu, intel
 compiler := gnu
+# compiler := intel
 
 # Specify the compiler invocation name and flags
 ifeq ($(compiler),gnu)
-  compile := caf 
+  compile := caf
   opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
   link_flags := -fcheck=all -Wall -fbacktrace -g
   lib :=
 else
   ifeq ($(compiler),intel)
-    compile := ifort 
-    opt := -standard-semantics -coarray=shared -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
-    link_flags := -standard-semantics -coarray=shared -check all -traceback -g
-    lib := 
+    compile := mpif90
+    # opt := -standard-semantics -coarray=shared -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+	opt := -standard-semantics -coarray -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+    link_flags := -standard-semantics -coarray -check all -traceback -g
+    lib :=
   endif
-endif 
+endif
 link := $(compile)
 
 objects_dir=../objects/
@@ -41,17 +43,17 @@ install_dir := $(homework_root)/bin
 
 # Locate required source files
 objects_source := $(shell ls $(objects_dir)/*.f90)
-bare_objects_source := $(subst $(objects_dir)/,,$(objects_source)) # Eliminate paths 
+bare_objects_source := $(subst $(objects_dir)/,,$(objects_source)) # Eliminate paths
 
-utilities_source := $(shell ls $(utilities)/*.f90) 
-bare_utilities_source := $(subst $(utilities)/,,$(utilities_source)) # Eliminate paths 
+utilities_source := $(shell ls $(utilities)/*.f90)
+bare_utilities_source := $(subst $(utilities)/,,$(utilities_source)) # Eliminate paths
 
-tests_source := $(shell ls $(tests_dir)/*.f90) 
-bare_tests_source := $(subst $(tests_dir)/,,$(tests_source)) # Eliminate paths 
+tests_source := $(shell ls $(tests_dir)/*.f90)
+bare_tests_source := $(subst $(tests_dir)/,,$(tests_source)) # Eliminate paths
 
 source_files := $(bare_objects_source) $(bare_utilities_source) $(bare_tests_source)
 
-# Swap .f90 file extensions for .o extensions 
+# Swap .f90 file extensions for .o extensions
 object_files := $(subst .f90,.o,$(source_files))
 
 # Executable depends on all object files and on the sourcery library
@@ -69,7 +71,7 @@ assertions_implementation.o: assertions_interface.o
 
 domain_interface.o: configuration_interface.o exchangeable_interface.o
 
-domain_implementation.o: domain_interface.o assertions_interface.o 
+domain_implementation.o: domain_interface.o assertions_interface.o
 
 # Prefer files in the present working directory (picks the local main over another main)
 %.o: %.f90

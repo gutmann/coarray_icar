@@ -36,11 +36,17 @@ build
 doc
 
 # =========================
+# Executables
+# =========================
+test-initialization
+
+# =========================
 # Compiler-generated files
 # =========================
 *.[oa]   # object files and static libraries
 *.[mod]  # Fortran module interface information
 *.[smod] # Fortran submodule interface information
+*.smod
 
 test-initialization
 input-parameters.txt
