@@ -36,7 +36,7 @@ module domain_interface
     type(exchangeable_t) :: w
 
     ! contains the size of the domain (or the local tile?)
-    integer :: nx, ny, nz
+    integer :: nx, ny, nz, ny_global
 
     ! store the start (s) and end (e) for the i,j,k dimensions
     integer ::  ids,ide, jds,jde, kds,kde, & ! for the entire model domain    (d)
@@ -90,7 +90,7 @@ module domain_interface
       implicit none
       class(domain_t), intent(in) :: this
       integer,         intent(in), optional :: nx_extra, ny_extra
-      integer :: n(space_dimension)
+      integer :: n(space_dimension+1)
     end function
 
     ! Input domain_t object from file

@@ -5,22 +5,46 @@ submodule(domain_interface) domain_implementation
 
 contains
 
+    subroutine print_in_image_order(input)
+        implicit none
+        real :: input(:,:)
+        integer :: i, j
+        integer :: nx, xstep
+        integer :: ny, ystep
+
+        nx = size(input,1)
+        ny = size(input,2)
+        ystep = ny/8
+        xstep = nx/8
+        do i=1,num_images()
+            if (this_image()==i) then
+                print*, this_image()
+                do j=lbound(input,2),ubound(input,2),ystep
+                    print *, input(::xstep,j)
+                enddo
+            endif
+            sync all
+        end do
+
+
+    end subroutine print_in_image_order
+
     subroutine master_initialize(this)
       class(domain_t), intent(inout) :: this
-      integer :: i
+      integer :: i,j
       real :: sine_curve
 
-      associate(                                           &
-        u_test_val=>0.5, v_test_val=>0.0, w_test_val=>0.0, &
-        water_vapor_test_val=>0.001,                       &
-        potential_temperature_test_val=>300.0,             &
-        cloud_water_mass_test_val=>0.0,                    &
-        cloud_ice_mass_test_val=>0.0,                      &
-        cloud_ice_number_test_val=>0.0,                    &
-        rain_mass_test_val=>0.0,                           &
-        rain_number_test_val=>0.0,                         &
-        snow_mass_test_val=>0.0,                           &
-        graupel_mass_test_val=>0.0,                        &
+      associate(                                            &
+        u_test_val=>0.5, v_test_val=>0.0, w_test_val=>0.0,  &
+        water_vapor_test_val            => 0.001,           &
+        potential_temperature_test_val  => 300.0,           &
+        cloud_water_mass_test_val       => 0.0,             &
+        cloud_ice_mass_test_val         => 0.0,             &
+        cloud_ice_number_test_val       => 0.0,             &
+        rain_mass_test_val              => 0.0,             &
+        rain_number_test_val            => 0.0,             &
+        snow_mass_test_val              => 0.0,             &
+        graupel_mass_test_val           => 0.0,             &
         nx=>this%nx, ny=>this%ny, nz=>this%nz )
 
         call this%u%initialize(this%get_grid_dimensions(nx_extra = 1), u_test_val)
@@ -69,17 +93,23 @@ contains
       this%jds = 1
       this%kds = 1
       this%ide = this%nx
-      this%jde = this%ny
+      this%jde = this%ny_global
       this%kde = this%nz
 
+      print*, this_image(), this%nx, this%ny, this%nz
+      print*, this_image(), this%ims, this%jms, this%kms
+
       associate(                                    &
-          surface_z=>0.0,                           &   ! elevation of the first model level [m]
-          dz_value=>500.0,                          &   ! thickness of each model gridcell   [m]
-          surface_pressure=>100000.0,               &   ! pressure at the first model level  [Pa]
+          surface_z            => 0.0,              &   ! elevation of the first model level [m]
+          dz_value             => 500.0,            &   ! thickness of each model gridcell   [m]
+          surface_pressure     => 100000.0,         &   ! pressure at the first model level  [Pa]
+          hill_height          => 1000.0,           &
+          ids=>this%ids, ide=>this%ide,             &
+          jds=>this%jds, jde=>this%jde,             &
+          kds=>this%kds, kde=>this%kde,             &
           ims=>this%ims, ime=>this%ime,             &
           jms=>this%jms, jme=>this%jme,             &
-          kms=>this%kms, kme=>this%kme,             &
-          hill_height=>1000.0                       &
+          kms=>this%kms, kme=>this%kme              &
           )
 
           allocate(this%accumulated_precipitation(ims:ime, jms:jme), source=0.)
@@ -94,9 +124,15 @@ contains
 
           ! this is a simple sine function for a hill... not the best test case but it's easy
           do i=ims,ime
-              sine_curve = (sin((i-ims)/real(ime-ims) * 2*3.14159 - 3.14159/2) + 1)
-              this%z_interface(i,kms,:) = surface_z + sine_curve * hill_height
+              do j=jms,jme
+                  sine_curve = (sin((i-ids)/real(ide-ids) * 2*3.14159 - 3.14159/2)  &
+                              * sin((j-jds)/real(jde-jds) * 2*3.14159 - 3.14159/2)  &
+                              + 1) / 2
+                  this%z_interface(i,kms,j) = surface_z + sine_curve * hill_height
+              enddo
           enddo
+          call print_in_image_order(this%z_interface(:,kms,:))
+
           this%z(:,kms,:) = this%z_interface(:,kms,:) + dz_value/2
 
           this%dz_mass(:,kms,:)     = this%dz_mass(:,kms,:)/2
@@ -220,6 +256,7 @@ contains
 
       this%nx = nx
       this%ny = my_ny(ny)
+      this%ny_global = ny
       this%nz = nz
       if (this_image()==1) print *,"call master_initialize(this)"
       call master_initialize(this)
@@ -243,10 +280,28 @@ contains
        end associate
     end function
 
+    function my_jstart(ny_global) result(jms)
+        implicit none
+        integer, intent(in) :: ny_global
+        integer :: jms
+        integer :: base_ny
+
+        associate(me=>this_image(),ni=>num_images())
+            base_ny = ny_global/ni
+            if (me<=mod(ny_global,ni)) then
+                jms = (me-1)*(base_ny+1) + 1
+            else
+                jms = (me-1)*(base_ny) + mod(ny_global,ni) + 1
+            endif
+            print*, this_image(), jms, base_ny, ny_global, mod(ny_global,ni), ni, me
+        end associate
+
+    end function my_jstart
+
     module function get_grid_dimensions(this, nx_extra, ny_extra) result(n)
       class(domain_t), intent(in) :: this
       integer,         intent(in), optional :: nx_extra, ny_extra
-      integer :: n(space_dimension)
+      integer :: n(space_dimension+1)
 
       integer :: nx_e, ny_e
 
@@ -255,7 +310,7 @@ contains
       if (present(nx_extra)) nx_e = nx_extra
       if (present(ny_extra)) ny_e = ny_extra
 
-      n = [this%nx + nx_e, this%nz, this%ny + ny_e]
+      n = [this%nx + nx_e, this%nz, this%ny + ny_e, my_jstart(this%ny_global + ny_e)]
 
     end function
 

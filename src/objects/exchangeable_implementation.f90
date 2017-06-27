@@ -2,7 +2,7 @@ submodule(exchangeable_interface) exchangeable_implementation
   use assertions_interface, only : assert, assertions
   implicit none
 
-  integer, parameter :: default_halo_size=5
+  integer, parameter :: default_halo_size=2
   integer, save, allocatable :: neighbors(:)
   integer, save :: north_neighbor, south_neighbor, halo_size
 
@@ -14,6 +14,8 @@ contains
     real, intent(in) :: initial_value
     integer, intent(in), optional :: halo_width
 
+    integer :: jms,jme
+
     if (present(halo_width)) then
         halo_size = halo_width
     else
@@ -24,8 +26,12 @@ contains
     this%north_boundary = (this_image() == num_images())
     this%south_boundary = (this_image() == 1)
 
-    associate( local_halo_size=>2*halo_size - merge(halo_size,0,this%south_boundary) - merge(halo_size,0,this%north_boundary) )
-      allocate(this%local(grid_dims(1),grid_dims(2),grid_dims(3) + local_halo_size),source=initial_value)
+
+    associate( halo_south => merge(0,halo_size,this%south_boundary), &
+               halo_north => merge(0,halo_size,this%north_boundary))
+      jms = grid_dims(4)-halo_south
+      jme = grid_dims(4)+grid_dims(3)+halo_north
+      allocate(this%local(grid_dims(1),grid_dims(2),jms:jme),source=initial_value)
     end associate
 
     allocate( this%halo_south_in( grid_dims(1),grid_dims(2),halo_size)[*], source=initial_value)
