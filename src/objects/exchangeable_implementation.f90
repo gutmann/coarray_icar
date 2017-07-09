@@ -30,7 +30,7 @@ contains
     associate( halo_south => merge(0,halo_size,this%south_boundary), &
                halo_north => merge(0,halo_size,this%north_boundary))
       jms = grid_dims(4)-halo_south
-      jme = grid_dims(4)+grid_dims(3)+halo_north
+      jme = grid_dims(4)+grid_dims(3)+halo_north-1
       allocate(this%local(grid_dims(1),grid_dims(2),jms:jme),source=initial_value)
     end associate
 
@@ -64,7 +64,8 @@ contains
 
     subroutine put_north
       integer :: n
-      n = size(this%local,3)
+      n = ubound(this%local,3)
+
       if (assertions) then
         !! gfortran 6.3.0 doesn't check coarray shape conformity with -fcheck=all so we verify with an assertion
         call assert( shape(this%halo_south_in(:,:,:)[north_neighbor]) == shape(this%local(:,:,n-halo_size+1:n)), &
@@ -74,12 +75,15 @@ contains
     end subroutine
 
     subroutine put_south
+      integer :: start
+      start = lbound(this%local,3)
+
       if (assertions) then
         !! gfortran 6.3.0 doesn't check coarray shape conformity with -fcheck=all so we verify with an assertion
-        call assert( shape(this%halo_north_in(:,:,:)[south_neighbor]) == shape(this%local(:,:,1:halo_size)), &
+        call assert( shape(this%halo_north_in(:,:,:)[south_neighbor]) == shape(this%local(:,:,start:start+halo_size-1)), &
                      "put_south: conformable halo_north_in and local " )
       end if
-      this%halo_north_in(:,:,:)[south_neighbor] = this%local(:,:,1:halo_size)
+      this%halo_north_in(:,:,:)[south_neighbor] = this%local(:,:,start:start+halo_size-1)
     end subroutine
 
     subroutine retrieve_north_halo

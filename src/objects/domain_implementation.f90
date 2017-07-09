@@ -96,8 +96,8 @@ contains
       this%jde = this%ny_global
       this%kde = this%nz
 
-      print*, this_image(), this%nx, this%ny, this%nz
-      print*, this_image(), this%ims, this%jms, this%kms
+      print*, this_image(), this%nx, this%ny, this%ny_global, this%nz
+      print*, this_image(), this%jms, this%jme, lbound(this%v%local,3),ubound(this%v%local,3)
 
       associate(                                    &
           surface_z            => 0.0,              &   ! elevation of the first model level [m]
@@ -255,8 +255,8 @@ contains
       if (assertions) call assert(stat==0,error_message)
 
       this%nx = nx
-      this%ny = my_ny(ny)
       this%ny_global = ny
+      this%ny = my_ny(ny)
       this%nz = nz
       if (this_image()==1) print *,"call master_initialize(this)"
       call master_initialize(this)
@@ -288,12 +288,13 @@ contains
 
         associate(me=>this_image(),ni=>num_images())
             base_ny = ny_global/ni
-            if (me<=mod(ny_global,ni)) then
-                jms = (me-1)*(base_ny+1) + 1
-            else
-                jms = (me-1)*(base_ny) + mod(ny_global,ni) + 1
-            endif
-            print*, this_image(), jms, base_ny, ny_global, mod(ny_global,ni), ni, me
+
+            jms = (me-1)*(base_ny) + min(me-1,mod(ny_global,ni)) + 1
+            ! if (me<=mod(ny_global,ni)) then
+            !     jms = (me-1)*(base_ny+1) + 1
+            ! else
+            !     jms = (me-1)*(base_ny) + mod(ny_global,ni) + 1
+            ! endif
         end associate
 
     end function my_jstart
