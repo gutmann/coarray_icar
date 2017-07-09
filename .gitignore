@@ -10,6 +10,12 @@ doc
 test-initialization
 
 # =========================
+# Temporary datafile
+# =========================
+*.dat
+core
+
+# =========================
 # Compiler-generated files
 # =========================
 *.[oa]   # object files and static libraries
