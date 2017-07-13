@@ -30,6 +30,7 @@ module domain_interface
     real, allocatable :: accumulated_precipitation(:,:)
     real, allocatable :: accumulated_snowfall(:,:)
 
+    ! these coarrays are used to send all data back to a master image for IO... feels very inefficient
     real, public, allocatable :: transfer_array_3d(:,:,:)[:]
     real, public, allocatable :: transfer_array_2d(:,:)[:]
 

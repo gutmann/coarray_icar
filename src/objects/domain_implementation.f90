@@ -130,7 +130,6 @@ contains
                   this%z_interface(i,kms,j) = surface_z + sine_curve * hill_height
               enddo
           enddo
-        !   call print_in_image_order(this%z_interface(:,kms,:))
 
           this%z(:,kms,:) = this%z_interface(:,kms,:) + dz_value/2
 
