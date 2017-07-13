@@ -8,6 +8,7 @@ doc
 # Executables
 # =========================
 test-initialization
+test-timer
 
 # =========================
 # Temporary datafile

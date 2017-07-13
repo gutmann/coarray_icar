@@ -6,7 +6,7 @@
 # $(info $$var is [${var}])
 
 ifeq ($(USE_ASSERTIONS),)
-  USE_ASSERTIONS:=.true.
+  USE_ASSERTIONS:=.false.
 endif
 
 executable := test-initialization
@@ -19,8 +19,8 @@ ifeq ($(compiler),gnu)
   compile := caf
   opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
   link_flags := -fcheck=all -Wall -fbacktrace -g
-  # opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
-  # link_flags := -Ofast
+  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+  link_flags := -Ofast
   lib :=
 else
   ifeq ($(compiler),intel)
@@ -39,9 +39,10 @@ physics=../physics
 tests_dir=.
 
 coarray_icar_root := ../..
-lib_dirs := -L $(homework_root)/lib
-mod_dirs := -I $(homework_root)/mod
-install_dir := $(homework_root)/bin
+root := $(HOME)
+lib_dirs := -L $(root)/lib
+mod_dirs := -I $(root)/mod
+install_dir := $(root)/bin
 
 
 # Locate required source files
@@ -62,16 +63,24 @@ source_files := $(bare_objects_source) $(bare_utilities_source) $(bare_tests_sou
 # Swap .f90 file extensions for .o extensions
 object_files := $(subst .f90,.o,$(source_files))
 
-# Executable depends on all object files and on the sourcery library
+# Executable depends on all object files
 $(executable): $(object_files)
 	$(link) $(object_files) -o $@ $(link_flags)
+
+test-timer: test-timer.o timer_interface.o timer_implementation.o
+	$(link) $^ -o $@ $(link_flags)
+
 
 install: $(executable)
 	mkdir -p $(install_dir)
 	cp $(executable) $(install_dir)
 
-# All dependencies are interfaces or libraries (no implementation depends on another implementation)
+# All dependencies are interfaces or libraries (no implementation should depend on another implementation)
 test-initialization.o: domain_interface.o assertions_interface.o mp_driver.o
+
+test-timer.o: timer_interface.o
+
+timer_implementation.o: timer_interface.o
 
 assertions_implementation.o: assertions_interface.o
 
