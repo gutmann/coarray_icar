@@ -56,9 +56,9 @@ program main
         ! endif
         ! call domain%enforce_limits()
     end do
+    sync all
     call cpu_time(finish)
 
-    sync all
     if (this_image()==1) then
         print *,"Model run time:",finish-start
     endif
