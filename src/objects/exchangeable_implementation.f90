@@ -2,7 +2,7 @@ submodule(exchangeable_interface) exchangeable_implementation
   use assertions_interface, only : assert, assertions
   implicit none
 
-  integer, parameter :: default_halo_size=2
+  integer, parameter :: default_halo_size=1
   integer, save, allocatable :: neighbors(:)
   integer, save :: north_neighbor, south_neighbor, halo_size
 
@@ -71,7 +71,8 @@ contains
         call assert( shape(this%halo_south_in(:,:,:)[north_neighbor]) == shape(this%local(:,:,n-halo_size+1:n)), &
                      "put_north: conformable halo_south_in and local " )
       end if
-      this%halo_south_in(:,:,:)[north_neighbor] = this%local(:,:,n-halo_size+1:n)
+
+      this%halo_south_in(:,:,:)[north_neighbor] = this%local(:,:,n-halo_size*2+1:n-halo_size)
     end subroutine
 
     subroutine put_south
@@ -83,17 +84,21 @@ contains
         call assert( shape(this%halo_north_in(:,:,:)[south_neighbor]) == shape(this%local(:,:,start:start+halo_size-1)), &
                      "put_south: conformable halo_north_in and local " )
       end if
-      this%halo_north_in(:,:,:)[south_neighbor] = this%local(:,:,start:start+halo_size-1)
+      this%halo_north_in(:,:,:)[south_neighbor] = this%local(:,:,start+halo_size:start+halo_size*2-1)
     end subroutine
 
     subroutine retrieve_north_halo
       integer :: n
-      n = size(this%local,3)
+      n = ubound(this%local,3)
+
       this%local(:,:,n-halo_size+1:n) = this%halo_north_in
     end subroutine
 
     subroutine retrieve_south_halo
-      this%local(:,:,1:halo_size) = this%halo_south_in
+      integer :: start
+      start = lbound(this%local,3)
+
+      this%local(:,:,start:start+halo_size-1) = this%halo_south_in
     end subroutine
 
   end subroutine
