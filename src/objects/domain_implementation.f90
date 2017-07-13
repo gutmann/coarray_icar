@@ -18,14 +18,13 @@ contains
         xstep = nx/8
         do i=1,num_images()
             if (this_image()==i) then
-                print*, this_image()
+                write(*,*) this_image()
                 do j=lbound(input,2),ubound(input,2),ystep
-                    print *, input(::xstep,j)
+                    write(*,*) input(::xstep,j)
                 enddo
             endif
             sync all
         end do
-
 
     end subroutine print_in_image_order
 
@@ -35,7 +34,7 @@ contains
       real :: sine_curve
 
       associate(                                            &
-        u_test_val=>0.5, v_test_val=>0.0, w_test_val=>0.0,  &
+        u_test_val=>0.0, v_test_val=>0.5, w_test_val=>0.0,  &
         water_vapor_test_val            => 0.001,           &
         potential_temperature_test_val  => 300.0,           &
         cloud_water_mass_test_val       => 0.0,             &
@@ -96,13 +95,13 @@ contains
       this%jde = this%ny_global
       this%kde = this%nz
 
-      print*, this_image(), this%nx, this%ny, this%ny_global, this%nz
-      print*, this_image(), this%jms, this%jme, lbound(this%v%local,3),ubound(this%v%local,3)
+      allocate(this%transfer_array_2d(this%nx, this%ny_global)[*])
+      allocate(this%transfer_array_3d(this%nx, this%nz, this%ny_global)[*])
 
       associate(                                    &
           surface_z            => 0.0,              &   ! elevation of the first model level [m]
           dz_value             => 500.0,            &   ! thickness of each model gridcell   [m]
-          surface_pressure     => 100000.0,         &   ! pressure at the first model level  [Pa]
+          sealevel_pressure    => 100000.0,         &   ! pressure at sea level              [Pa]
           hill_height          => 1000.0,           &
           ids=>this%ids, ide=>this%ide,             &
           jds=>this%jds, jde=>this%jde,             &
@@ -114,7 +113,7 @@ contains
 
           allocate(this%accumulated_precipitation(ims:ime, jms:jme), source=0.)
           allocate(this%accumulated_snowfall     (ims:ime, jms:jme), source=0.)
-          allocate(this%pressure                 (ims:ime, kms:kme, jms:jme), source=surface_pressure)
+          allocate(this%pressure                 (ims:ime, kms:kme, jms:jme))
           allocate(this%temperature              (ims:ime, kms:kme, jms:jme))
           allocate(this%exner                    (ims:ime, kms:kme, jms:jme))
           allocate(this%z                        (ims:ime, kms:kme, jms:jme))
@@ -123,24 +122,24 @@ contains
           allocate(this%dz_mass                  (ims:ime, kms:kme, jms:jme), source=dz_value)
 
           ! this is a simple sine function for a hill... not the best test case but it's easy
-          do i=ims,ime
-              do j=jms,jme
-                  sine_curve = (sin((i-ids)/real(ide-ids) * 2*3.14159 - 3.14159/2)  &
-                              * sin((j-jds)/real(jde-jds) * 2*3.14159 - 3.14159/2)  &
-                              + 1) / 2
+          do j=jms,jme
+              do i=ims,ime
+                  sine_curve = (sin((i-ids)/real(ide-ids) * 2*3.14159 - 3.14159/2) + 1) / 2  &
+                              *(sin((j-jds)/real(jde-jds) * 2*3.14159 - 3.14159/2) + 1) / 2
+
                   this%z_interface(i,kms,j) = surface_z + sine_curve * hill_height
               enddo
           enddo
-          call print_in_image_order(this%z_interface(:,kms,:))
+        !   call print_in_image_order(this%z_interface(:,kms,:))
 
           this%z(:,kms,:) = this%z_interface(:,kms,:) + dz_value/2
 
           this%dz_mass(:,kms,:)     = this%dz_mass(:,kms,:)/2
-          this%pressure(:,kms,:)    = pressure_at_elevation(surface_pressure, this%z(:,kms,:))
+          this%pressure(:,kms,:)    = pressure_at_elevation(sealevel_pressure, this%z(:,kms,:))
           do i=kms+1,kme
               this%z(:,i,:)           = this%z(:,i-1,:)           + this%dz_mass(:,i,:)
               this%z_interface(:,i,:) = this%z_interface(:,i-1,:) + this%dz_interface(:,i,:)
-              this%pressure(:,i,:)    = pressure_at_elevation(surface_pressure, this%z(:,i,:))
+              this%pressure(:,i,:)    = pressure_at_elevation(sealevel_pressure, this%z(:,i,:))
           enddo
           this%exner       = exner_function(this%pressure)
           this%temperature = this%exner * this%potential_temperature%local
@@ -209,12 +208,12 @@ contains
     !! Convert p [Pa] at shifting it to a given elevatiom [m]
     !!
     !! -------------------------------
-    elemental function pressure_at_elevation(surface_pressure, elevation) result(pressure)
+    elemental function pressure_at_elevation(sealevel_pressure, elevation) result(pressure)
         implicit none
-        real, intent(in) :: surface_pressure, elevation
+        real, intent(in) :: sealevel_pressure, elevation
         real :: pressure
 
-        pressure = surface_pressure * (1 - 2.25577E-5 * elevation)**5.25588
+        pressure = sealevel_pressure * (1 - 2.25577E-5 * elevation)**5.25588
 
     end function
 
@@ -234,6 +233,11 @@ contains
         end associate
     end function
 
+    !> -------------------------------
+    !!
+    !! Initialize the domain reading grid dimensions from an input file
+    !!
+    !! -------------------------------
     module subroutine initialize_from_file(this,file_name)
       class(domain_t), intent(inout) :: this
       character(len=*), intent(in) :: file_name

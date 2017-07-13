@@ -30,6 +30,9 @@ module domain_interface
     real, allocatable :: accumulated_precipitation(:,:)
     real, allocatable :: accumulated_snowfall(:,:)
 
+    real, public, allocatable :: transfer_array_3d(:,:,:)[:]
+    real, public, allocatable :: transfer_array_2d(:,:)[:]
+
     ! wind field to control advection
     type(exchangeable_t) :: u
     type(exchangeable_t) :: v
