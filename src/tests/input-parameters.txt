@@ -1,1 +1,1 @@
-&grid nx=100,ny=150,nz=40 /
+&grid nx=200,ny=720,nz=40 /

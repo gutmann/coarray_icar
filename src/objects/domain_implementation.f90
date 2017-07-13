@@ -77,9 +77,9 @@ contains
       this%jme = ubound(this%water_vapor%local,3)
 
       ! initially set the tile to process to be set in one from the edges of memory
-      if (assertions) call assert((this%ime - this%ims) > 3, "x dimension has too few elements")
-      if (assertions) call assert((this%jme - this%jms) > 3, "y dimension has too few elements")
-      if (assertions) call assert((this%kme - this%kms) > 3, "z dimension has too few elements")
+      if (assertions) call assert((this%ime - this%ims+1) >= 2, "x dimension has too few elements")
+      if (assertions) call assert((this%jme - this%jms+1) >= 2, "y dimension has too few elements")
+      if (assertions) call assert((this%kme - this%kms+1) >= 2, "z dimension has too few elements")
       this%its = this%ims + 1
       this%jts = this%jms + 1
       this%kts = this%kms
