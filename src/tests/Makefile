@@ -19,8 +19,8 @@ ifeq ($(compiler),gnu)
   compile := caf
   opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
   link_flags := -fcheck=all -Wall -fbacktrace -g
-  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
-  link_flags := -Ofast
+  # opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+  # link_flags := -Ofast
   lib :=
 else
   ifeq ($(compiler),intel)
