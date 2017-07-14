@@ -9,7 +9,7 @@ ifeq ($(USE_ASSERTIONS),)
   USE_ASSERTIONS:=.false.
 endif
 
-executable := test-initialization
+executable := test-ideal
 # Options: gnu, intel
 compiler := gnu
 # compiler := intel
@@ -64,8 +64,11 @@ source_files := $(bare_objects_source) $(bare_utilities_source) $(bare_tests_sou
 object_files := $(subst .f90,.o,$(source_files))
 
 # Executable depends on all object files
-$(executable): $(object_files)
-	$(link) $(object_files) -o $@ $(link_flags)
+test-ideal: domain_implementation.o domain_interface.o exchangeable_implementation.o exchangeable_interface.o timer_implementation.o timer_interface.o assertions_implementation.o assertions_interface.o configuration_implementation.o configuration_interface.o test-ideal.o mp_driver.o mp_thompson.o
+	$(link) $^ -o $@ $(link_flags)
+
+test-initialization: domain_implementation.o domain_interface.o exchangeable_implementation.o exchangeable_interface.o assertions_implementation.o assertions_interface.o configuration_implementation.o configuration_interface.o test-initialization.o mp_driver.o mp_thompson.o
+	$(link) $^ -o $@ $(link_flags)
 
 test-timer: test-timer.o timer_interface.o timer_implementation.o
 	$(link) $^ -o $@ $(link_flags)
@@ -77,6 +80,8 @@ install: $(executable)
 
 # All dependencies are interfaces or libraries (no implementation should depend on another implementation)
 test-initialization.o: domain_interface.o assertions_interface.o mp_driver.o
+
+test-ideal.o: domain_interface.o assertions_interface.o mp_driver.o
 
 test-timer.o: timer_interface.o
 
