@@ -3,6 +3,7 @@ program main
   use domain_interface, only : domain_t
   use assertions_interface, only : assert
   use module_mp_driver, only: microphysics
+  use timer_interface, only: timer_t
   implicit none
 
   if (this_image()==1) print *,"Number of images = ",num_images()
@@ -23,7 +24,7 @@ program main
   block
     type(domain_t) :: domain
     integer :: i,nz, ypos
-    real :: start, finish
+    type(timer_t) :: timer
 
     if (this_image()==1) print *,this_image(),"domain%initialize_from_file('input-parameters.txt')"
     call domain%initialize_from_file('input-parameters.txt')
@@ -40,7 +41,7 @@ program main
     ypos = (ubound(domain%accumulated_precipitation,2)-lbound(domain%accumulated_precipitation,2))/2
     ypos = ypos + lbound(domain%accumulated_precipitation,2)
     sync all
-    call cpu_time(start)
+    call timer%start()
     do i=1,200
         ! print *,"Microphysics"
         ! note should this be wrapped into the domain object(?)
@@ -57,10 +58,10 @@ program main
         ! call domain%enforce_limits()
     end do
     sync all
-    call cpu_time(finish)
+    call timer%stop()
 
     if (this_image()==1) then
-        print *,"Model run time:",finish-start
+        print *,"Model run time:",timer%as_string('(f6.0," seconds")')
     endif
   end block
 
