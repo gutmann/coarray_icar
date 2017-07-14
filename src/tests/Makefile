@@ -6,10 +6,10 @@
 # $(info $$var is [${var}])
 
 ifeq ($(USE_ASSERTIONS),)
-  USE_ASSERTIONS:=.true.
+  USE_ASSERTIONS:=.false.
 endif
 
-executable := test-initialization
+executable := test-ideal
 # Options: gnu, intel
 compiler := gnu
 # compiler := intel
@@ -39,9 +39,10 @@ physics=../physics
 tests_dir=.
 
 coarray_icar_root := ../..
-lib_dirs := -L $(homework_root)/lib
-mod_dirs := -I $(homework_root)/mod
-install_dir := $(homework_root)/bin
+root := $(HOME)
+lib_dirs := -L $(root)/lib
+mod_dirs := -I $(root)/mod
+install_dir := $(root)/bin
 
 
 # Locate required source files
@@ -62,16 +63,29 @@ source_files := $(bare_objects_source) $(bare_utilities_source) $(bare_tests_sou
 # Swap .f90 file extensions for .o extensions
 object_files := $(subst .f90,.o,$(source_files))
 
-# Executable depends on all object files and on the sourcery library
-$(executable): $(object_files)
-	$(link) $(object_files) -o $@ $(link_flags)
+# Executable depends on all object files
+test-ideal: domain_implementation.o domain_interface.o exchangeable_implementation.o exchangeable_interface.o timer_implementation.o timer_interface.o assertions_implementation.o assertions_interface.o configuration_implementation.o configuration_interface.o test-ideal.o mp_driver.o mp_thompson.o
+	$(link) $^ -o $@ $(link_flags)
+
+test-initialization: domain_implementation.o domain_interface.o exchangeable_implementation.o exchangeable_interface.o assertions_implementation.o assertions_interface.o configuration_implementation.o configuration_interface.o test-initialization.o mp_driver.o mp_thompson.o
+	$(link) $^ -o $@ $(link_flags)
+
+test-timer: test-timer.o timer_interface.o timer_implementation.o
+	$(link) $^ -o $@ $(link_flags)
+
 
 install: $(executable)
 	mkdir -p $(install_dir)
 	cp $(executable) $(install_dir)
 
-# All dependencies are interfaces or libraries (no implementation depends on another implementation)
+# All dependencies are interfaces or libraries (no implementation should depend on another implementation)
 test-initialization.o: domain_interface.o assertions_interface.o mp_driver.o
+
+test-ideal.o: domain_interface.o assertions_interface.o mp_driver.o
+
+test-timer.o: timer_interface.o
+
+timer_implementation.o: timer_interface.o
 
 assertions_implementation.o: assertions_interface.o
 

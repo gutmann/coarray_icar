@@ -7,7 +7,15 @@ doc
 # =========================
 # Executables
 # =========================
+test-ideal
 test-initialization
+test-timer
+
+# =========================
+# Temporary datafile
+# =========================
+*.dat
+core
 
 # =========================
 # Compiler-generated files
