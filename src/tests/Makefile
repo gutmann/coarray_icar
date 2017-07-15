@@ -9,30 +9,7 @@ ifeq ($(USE_ASSERTIONS),)
   USE_ASSERTIONS:=.false.
 endif
 
-executable := test-ideal
-# Options: gnu, intel
-compiler := gnu
-# compiler := intel
-
-# Specify the compiler invocation name and flags
-ifeq ($(compiler),gnu)
-  compile := caf
-  opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
-  link_flags := -fcheck=all -Wall -fbacktrace -g
-  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
-  link_flags := -Ofast
-  lib :=
-else
-  ifeq ($(compiler),intel)
-    compile := mpif90
-    # opt := -standard-semantics -coarray=shared -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
-	opt := -standard-semantics -coarray -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
-    link_flags := -standard-semantics -coarray -check all -traceback -g
-    lib :=
-  endif
-endif
-link := $(compile)
-
+BUILD=../build
 objects_dir=../objects
 utilities=../utilities
 physics=../physics
@@ -45,32 +22,91 @@ mod_dirs := -I $(root)/mod
 install_dir := $(root)/bin
 
 
+executable := test-ideal test-initialization test-timer
+# Options: gnu, intel
+compiler := gnu
+# compiler := intel
+
+# Specify the compiler invocation name and flags
+ifeq ($(compiler),gnu)
+  compile := caf
+  opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
+  link_flags := -fcheck=all -Wall -fbacktrace -g
+  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
+  link_flags := -Ofast
+  lib :=
+else
+  ifeq ($(compiler),intel)
+    compile := mpif90
+    # opt := -standard-semantics -coarray=shared -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+	opt := -standard-semantics -coarray -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+    link_flags := -standard-semantics -coarray -check all -traceback -g
+    lib :=
+  endif
+endif
+link := $(compile)
+
+
 # Locate required source files
-objects_source := $(shell ls $(objects_dir)/*.f90)
-bare_objects_source := $(subst $(objects_dir)/,,$(objects_source)) # Eliminate paths
+# objects_source := $(shell ls $(objects_dir)/*.f90)
+# bare_objects_source := $(subst $(objects_dir)/,,$(objects_source)) # Eliminate paths
+#
+# utilities_source := $(shell ls $(utilities)/*.f90)
+# bare_utilities_source := $(subst $(utilities)/,,$(utilities_source)) # Eliminate paths
+#
+# physics_source := $(shell ls $(physics)/*.f90)
+# bare_physics_source := $(subst $(physics)/,,$(physics_source)) # Eliminate paths
+#
+# tests_source := $(shell ls $(tests_dir)/*.f90)
+# bare_tests_source := $(subst $(tests_dir)/,,$(tests_source)) # Eliminate paths
+#
+# source_files := $(bare_objects_source) $(bare_utilities_source) $(bare_tests_source) $(bare_physics_source)
+#
+# bare_objects_source := $(subst $(objects_dir),$(BUILD),$(objects_source)) # Eliminate paths
+# bare_utilities_source := $(subst $(utilities),$(BUILD),$(utilities_source)) # Eliminate paths
+# bare_physics_source := $(subst $(physics),$(BUILD),$(physics_source)) # Eliminate paths
+# bare_tests_source := $(subst $(tests_dir),$(BUILD),$(tests_source)) # Eliminate paths
+#
+# build_source_files := $(bare_objects_source) $(bare_utilities_source) $(bare_tests_source) $(bare_physics_source)
+#
+# # Swap .f90 file extensions for .o extensions
+# object_files := $(subst .f90,.o,$(build_source_files))
 
-utilities_source := $(shell ls $(utilities)/*.f90)
-bare_utilities_source := $(subst $(utilities)/,,$(utilities_source)) # Eliminate paths
-
-physics_source := $(shell ls $(physics)/*.f90)
-bare_physics_source := $(subst $(physics)/,,$(physics_source)) # Eliminate paths
-
-tests_source := $(shell ls $(tests_dir)/*.f90)
-bare_tests_source := $(subst $(tests_dir)/,,$(tests_source)) # Eliminate paths
-
-source_files := $(bare_objects_source) $(bare_utilities_source) $(bare_tests_source) $(bare_physics_source)
-
-# Swap .f90 file extensions for .o extensions
-object_files := $(subst .f90,.o,$(source_files))
-
-# Executable depends on all object files
-test-ideal: domain_implementation.o domain_interface.o exchangeable_implementation.o exchangeable_interface.o timer_implementation.o timer_interface.o assertions_implementation.o assertions_interface.o configuration_implementation.o configuration_interface.o test-ideal.o mp_driver.o mp_thompson.o
+# Executable depends on object files
+test-ideal: \
+			$(BUILD)/domain_implementation.o		\
+			$(BUILD)/domain_interface.o				\
+			$(BUILD)/exchangeable_implementation.o	\
+			$(BUILD)/exchangeable_interface.o		\
+			$(BUILD)/timer_implementation.o			\
+			$(BUILD)/timer_interface.o				\
+			$(BUILD)/assertions_implementation.o	\
+			$(BUILD)/assertions_interface.o			\
+			$(BUILD)/configuration_implementation.o	\
+			$(BUILD)/configuration_interface.o		\
+			$(BUILD)/test-ideal.o					\
+			$(BUILD)/mp_driver.o					\
+			$(BUILD)/mp_thompson.o
 	$(link) $^ -o $@ $(link_flags)
 
-test-initialization: domain_implementation.o domain_interface.o exchangeable_implementation.o exchangeable_interface.o assertions_implementation.o assertions_interface.o configuration_implementation.o configuration_interface.o test-initialization.o mp_driver.o mp_thompson.o
+test-initialization: \
+					$(BUILD)/domain_implementation.o 		\
+					 $(BUILD)/domain_interface.o 			\
+					 $(BUILD)/exchangeable_implementation.o	\
+					 $(BUILD)/exchangeable_interface.o		\
+					 $(BUILD)/assertions_implementation.o	\
+					 $(BUILD)/assertions_interface.o		\
+					 $(BUILD)/configuration_implementation.o\
+					 $(BUILD)/configuration_interface.o		\
+					 $(BUILD)/test-initialization.o			\
+					 $(BUILD)/mp_driver.o					\
+					 $(BUILD)/mp_thompson.o
 	$(link) $^ -o $@ $(link_flags)
 
-test-timer: test-timer.o timer_interface.o timer_implementation.o
+test-timer: \
+			$(BUILD)/timer_interface.o	\
+			$(BUILD)/test-timer.o		\
+			$(BUILD)/timer_implementation.o
 	$(link) $^ -o $@ $(link_flags)
 
 
@@ -79,47 +115,73 @@ install: $(executable)
 	cp $(executable) $(install_dir)
 
 # All dependencies are interfaces or libraries (no implementation should depend on another implementation)
-test-initialization.o: domain_interface.o assertions_interface.o mp_driver.o
+$(BUILD)/test-initialization.o: test-initialization.f90 		\
+								$(BUILD)/domain_interface.o     \
+								$(BUILD)/assertions_interface.o \
+								$(BUILD)/mp_driver.o			\
+								$(BUILD)/timer_interface.o
+	$(compile) $(opt) -c $< -o $@
 
-test-ideal.o: domain_interface.o assertions_interface.o mp_driver.o
+$(BUILD)/test-ideal.o: 	test-ideal.f90					\
+						$(BUILD)/domain_interface.o 	\
+						$(BUILD)/assertions_interface.o \
+						$(BUILD)/mp_driver.o			\
+						$(BUILD)/timer_interface.o
+	$(compile) $(opt) -c $< -o $@
 
-test-timer.o: timer_interface.o
-
-timer_implementation.o: timer_interface.o
-
-assertions_implementation.o: assertions_interface.o
-
-domain_interface.o: configuration_interface.o exchangeable_interface.o
-
-exchangeable_implementation.o: exchangeable_interface.o
-configuration_implementation.o: configuration_interface.o
-
-domain_implementation.o: domain_interface.o assertions_interface.o
-
-mp_driver.o: mp_thompson.o domain_interface.o
+$(BUILD)/test-timer.o: test-timer.f90 $(BUILD)/timer_interface.o
+	$(compile) $(opt) -c $< -o $@
 
 
+$(BUILD)/timer_implementation.o: $(BUILD)/timer_interface.o
+
+$(BUILD)/assertions_implementation.o: $(BUILD)/assertions_interface.o
+
+$(BUILD)/domain_interface.o: 	$(BUILD)/configuration_interface.o \
+								$(BUILD)/exchangeable_interface.o
+
+$(BUILD)/exchangeable_implementation.o: $(BUILD)/exchangeable_interface.o
+
+$(BUILD)/configuration_implementation.o: $(BUILD)/configuration_interface.o
+
+$(BUILD)/domain_implementation.o: 	$(BUILD)/domain_interface.o \
+									$(BUILD)/assertions_interface.o
+
+$(BUILD)/mp_driver.o: 	$(BUILD)/mp_thompson.o \
+						$(BUILD)/domain_interface.o
+
+
+$(info $$BUILD        = ${BUILD})
+$(info $$tests_dir        = ${tests_dir})
+$(info $$objects_dir        = ${objects_dir})
+$(info $$utilities        = ${utilities})
+$(info $$physics        = ${physics})
 
 # Prefer files in the present working directory (picks the local main over another main)
-%.o: %.f90
-	$(compile) $(opt) -c $<
+# %.o: %.f90
+# 	$(compile) $(opt) -c $< -o $@
+
+
+
+%.o: $(tests_dir)/%.f90
+	$(compile) $(opt) -c $< -o $@
 
 # Compile dependencies from utilities directory
 %.o: $(utilities)/%.f90
-	$(compile) $(opt) -c $<
+	$(compile) $(opt) -c $< -o $@
 
 # Compile dependencies from physics directory
 %.o: $(physics)/%.f90
-	$(compile) $(opt) -c $<
+	$(compile) $(opt) -c $< -o $@
 
 # Compile dependencies from objects
 %.o: $(objects_dir)/%.f90
-	$(compile) $(opt) -c $<
+	$(compile) $(opt) -c $< -o $@
 
 .PHONY : clean uninstall
 
 clean :
-	-rm -f  *.o *.mod *.smod $(executable)
+	-rm -f  $(BUILD)/*.o $(BUILD)/*.mod $(BUILD)/*.smod $(executable)
 
 uninstall :
 	-rm -f  $(install_dir)/$(executable)
