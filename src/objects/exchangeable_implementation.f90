@@ -53,16 +53,30 @@ contains
 
   end subroutine
 
+  module subroutine send(this)
+    class(exchangeable_t), intent(inout) :: this
+    if (.not. this%north_boundary) call this%put_north
+    if (.not. this%south_boundary) call this%put_south
+  end subroutine
+
+  module subroutine retrieve(this)
+    class(exchangeable_t), intent(inout) :: this
+    sync images( neighbors )
+    if (.not. this%north_boundary) call this%retrieve_north_halo
+    if (.not. this%south_boundary) call this%retrieve_south_halo
+  end subroutine
+
   module subroutine exchange(this)
     class(exchangeable_t), intent(inout) :: this
-    if (.not. this%north_boundary) call put_north
-    if (.not. this%south_boundary) call put_south
+    if (.not. this%north_boundary) call this%put_north
+    if (.not. this%south_boundary) call this%put_south
     sync images( neighbors )
-    if (.not. this%north_boundary) call retrieve_north_halo
-    if (.not. this%south_boundary) call retrieve_south_halo
-  contains
+    if (.not. this%north_boundary) call this%retrieve_north_halo
+    if (.not. this%south_boundary) call this%retrieve_south_halo
+  end subroutine
 
-    subroutine put_north
+  module subroutine put_north(this)
+      class(exchangeable_t), intent(inout) :: this
       integer :: n
       n = ubound(this%local,3)
 
@@ -75,7 +89,9 @@ contains
       this%halo_south_in(:,:,:)[north_neighbor] = this%local(:,:,n-halo_size*2+1:n-halo_size)
     end subroutine
 
-    subroutine put_south
+  module subroutine put_south(this)
+      class(exchangeable_t), intent(inout) :: this
+
       integer :: start
       start = lbound(this%local,3)
 
@@ -87,20 +103,22 @@ contains
       this%halo_north_in(:,:,:)[south_neighbor] = this%local(:,:,start+halo_size:start+halo_size*2-1)
     end subroutine
 
-    subroutine retrieve_north_halo
+  module subroutine retrieve_north_halo(this)
+      class(exchangeable_t), intent(inout) :: this
+
       integer :: n
       n = ubound(this%local,3)
 
       this%local(:,:,n-halo_size+1:n) = this%halo_north_in
     end subroutine
 
-    subroutine retrieve_south_halo
+  module subroutine retrieve_south_halo(this)
+      class(exchangeable_t), intent(inout) :: this
+
       integer :: start
       start = lbound(this%local,3)
 
       this%local(:,:,start:start+halo_size-1) = this%halo_south_in
     end subroutine
-
-  end subroutine
 
 end submodule
