@@ -53,6 +53,8 @@ module domain_interface
     procedure :: get_grid_dimensions
     procedure :: initialize_from_file
     procedure :: advect
+    procedure :: halo_send
+    procedure :: halo_retrieve
     procedure :: halo_exchange
     procedure :: enforce_limits
    !generic :: read(formatted)=>initialize_from_file
@@ -76,6 +78,18 @@ module domain_interface
       class(domain_t), intent(inout) :: this
       real,            intent(in)    :: dt
     end subroutine
+
+
+    module subroutine halo_send(this)
+      implicit none
+      class(domain_t), intent(inout) :: this
+    end subroutine
+
+    module subroutine halo_retrieve(this)
+      implicit none
+      class(domain_t), intent(inout) :: this
+    end subroutine
+
 
     ! Exchange subdomain boundary information
     module subroutine halo_exchange(this)

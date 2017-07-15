@@ -45,17 +45,14 @@ program main
     do i=1,200
         ! print *,"Microphysics"
         ! note should this be wrapped into the domain object(?)
-        call microphysics(domain, dt = 20.0)
-        ! print *,"domain%advect(dt = 4.0)"
+        call microphysics(domain, dt = 20.0, halo=1)
+        call domain%halo_send()
+        call microphysics(domain, dt = 20.0, subset=1)
+
+        call domain%halo_retrieve()
+
         call domain%advect(dt = 1.0)
 
-        ! print *,"domain%halo_exchange()"
-        call domain%halo_exchange()
-
-        ! if (this_image()==(num_images()/2)) then
-        !     print*, this_image(), i, domain%accumulated_precipitation(::10,ypos)
-        ! endif
-        ! call domain%enforce_limits()
     end do
     sync all
     call timer%stop()

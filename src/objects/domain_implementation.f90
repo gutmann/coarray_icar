@@ -332,6 +332,32 @@ contains
 
     end subroutine
 
+    module subroutine halo_send(this)
+      class(domain_t), intent(inout) :: this
+      call this%water_vapor%send()
+      call this%potential_temperature%send()
+      call this%cloud_water_mass%send()
+      call this%cloud_ice_mass%send()
+      call this%cloud_ice_number%send()
+      call this%rain_mass%send()
+      call this%rain_number%send()
+      call this%snow_mass%send()
+      call this%graupel_mass%send()
+    end subroutine
+
+    module subroutine halo_retrieve(this)
+      class(domain_t), intent(inout) :: this
+      call this%water_vapor%retrieve()
+      call this%potential_temperature%retrieve()
+      call this%cloud_water_mass%retrieve()
+      call this%cloud_ice_mass%retrieve()
+      call this%cloud_ice_number%retrieve()
+      call this%rain_mass%retrieve()
+      call this%rain_number%retrieve()
+      call this%snow_mass%retrieve()
+      call this%graupel_mass%retrieve()
+    end subroutine
+
     module subroutine halo_exchange(this)
       class(domain_t), intent(inout) :: this
       call this%water_vapor%send()

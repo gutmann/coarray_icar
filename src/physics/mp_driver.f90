@@ -16,11 +16,14 @@ contains
 
     end subroutine mp_init
 
-    subroutine microphysics(domain, dt)
+    subroutine microphysics(domain, dt, halo, subset)
         implicit none
         type(domain_t), intent(inout) :: domain
         real,           intent(in)    :: dt
+        integer,        intent(in),   optional :: halo, subset
 
+        if (present(subset)) return
+        
         if (.not.initialized) call mp_init(domain)
 
         call mp_gt_driver(  qv=domain%water_vapor%local,            &
