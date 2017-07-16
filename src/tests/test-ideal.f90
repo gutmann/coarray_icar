@@ -53,6 +53,10 @@ program main
 
         call domain%advect(dt = 1.0)
 
+        ! if (this_image()==(num_images()/2)) then
+        !     print*, domain%accumulated_precipitation(::3,ypos)
+        ! endif
+
     end do
     sync all
     call timer%stop()
