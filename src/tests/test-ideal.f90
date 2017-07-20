@@ -40,6 +40,9 @@ program main
 
     ypos = (ubound(domain%accumulated_precipitation,2)-lbound(domain%accumulated_precipitation,2))/2
     ypos = ypos + lbound(domain%accumulated_precipitation,2)
+
+    ! initialize microphysics before starting the timer
+    call microphysics(domain, dt = 20.0)
     sync all
     call timer%start()
     do i=1,200
