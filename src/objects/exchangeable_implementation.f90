@@ -59,9 +59,18 @@ contains
     if (.not. this%south_boundary) call this%put_south
   end subroutine
 
-  module subroutine retrieve(this)
+  module subroutine retrieve(this, no_sync)
     class(exchangeable_t), intent(inout) :: this
-    sync images( neighbors )
+    logical,               intent(in),   optional :: no_sync
+
+    if (.not. present(no_sync)) then
+        sync images( neighbors )
+    else
+        if (.not. no_sync) then
+            sync images( neighbors )
+        endif
+    endif
+
     if (.not. this%north_boundary) call this%retrieve_north_halo
     if (.not. this%south_boundary) call this%retrieve_south_halo
   end subroutine

@@ -345,14 +345,14 @@ contains
       call this%graupel_mass%send()
 
       call this%water_vapor%retrieve()
-      call this%potential_temperature%retrieve()
-      call this%cloud_water_mass%retrieve()
-      call this%cloud_ice_mass%retrieve()
-      call this%cloud_ice_number%retrieve()
-      call this%rain_mass%retrieve()
-      call this%rain_number%retrieve()
-      call this%snow_mass%retrieve()
-      call this%graupel_mass%retrieve()
+      call this%potential_temperature%retrieve(no_sync=.True.)
+      call this%cloud_water_mass%retrieve(no_sync=.True.)
+      call this%cloud_ice_mass%retrieve(no_sync=.True.)
+      call this%cloud_ice_number%retrieve(no_sync=.True.)
+      call this%rain_mass%retrieve(no_sync=.True.)
+      call this%rain_number%retrieve(no_sync=.True.)
+      call this%snow_mass%retrieve(no_sync=.True.)
+      call this%graupel_mass%retrieve(no_sync=.True.)
     end subroutine
 
     subroutine upwind(q, u,v,w, dt)

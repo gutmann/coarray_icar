@@ -42,9 +42,10 @@ module exchangeable_interface
       class(exchangeable_t), intent(inout) :: this
     end subroutine
 
-    module subroutine retrieve(this)
+    module subroutine retrieve(this, no_sync)
       implicit none
       class(exchangeable_t), intent(inout) :: this
+      logical,               intent(in),   optional :: no_sync
     end subroutine
 
     module subroutine exchange(this)
@@ -56,7 +57,7 @@ module exchangeable_interface
         implicit none
         class(exchangeable_t), intent(inout) :: this
     end subroutine
-    
+
     module subroutine put_south(this)
         implicit none
         class(exchangeable_t), intent(inout) :: this
