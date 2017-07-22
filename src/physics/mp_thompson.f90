@@ -4048,6 +4048,7 @@
           READ(63,err=1234)tni_qcfz
           good = 1
  1234     CONTINUE
+          INQUIRE(63,opened=lopen)
           IF (lopen) THEN
             CLOSE(63)
           endif
