@@ -40,7 +40,8 @@ module domain_interface
     type(exchangeable_t) :: w
 
     ! contains the size of the domain (or the local tile?)
-    integer :: nx, ny, nz, ny_global
+    integer :: nx, ny, nz, nx_global, ny_global
+    integer :: ximg, ximages, yimg, yimages
 
     ! store the start (s) and end (e) for the i,j,k dimensions
     integer ::  ids,ide, jds,jde, kds,kde, & ! for the entire model domain    (d)
@@ -57,6 +58,7 @@ module domain_interface
     procedure :: halo_retrieve
     procedure :: halo_exchange
     procedure :: enforce_limits
+    procedure :: domain_decomposition
    !generic :: read(formatted)=>initialize_from_file
    !procedure, private :: initialize_with_configuration
    !procedure :: update_boundary
@@ -103,12 +105,18 @@ module domain_interface
       class(domain_t), intent(inout) :: this
     end subroutine
 
-    ! Return x, y, z dimennsions of grid
+    module subroutine domain_decomposition(this, nx, ny, nimages)
+      implicit none
+      class(domain_t), intent(inout) :: this
+      integer,         intent(in)    :: nx, ny, nimages
+    end subroutine
+
+    ! Return x, y, z dimensions of grid
     module function get_grid_dimensions(this, nx_extra, ny_extra) result(n)
       implicit none
       class(domain_t), intent(in) :: this
       integer,         intent(in), optional :: nx_extra, ny_extra
-      integer :: n(space_dimension+1)
+      integer :: n(space_dimension+2)
     end function
 
     ! Input domain_t object from file

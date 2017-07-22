@@ -91,7 +91,7 @@ contains
       this%ids = 1
       this%jds = 1
       this%kds = 1
-      this%ide = this%nx
+      this%ide = this%nx_global
       this%jde = this%ny_global
       this%kde = this%nz
 
@@ -233,7 +233,68 @@ contains
     end function
 
     !> -------------------------------
+    !! Decompose the domain into as even a set of tiles as possible in two dimensions
     !!
+    !! Searches through possible numbers of x and y tiles that multiple evenly to
+    !! give the total number of images requested.
+    !!
+    !! For each x/y split compute the number of grid cells in both dimensions in each tile
+    !! return the split that provides the closest match between the number of x and y grid cells
+    !!
+    !! -------------------------------
+    module subroutine domain_decomposition(this, nx, ny, nimages)
+        class(domain_t), intent(inout) :: this
+        integer,         intent(in)    :: nx, ny, nimages
+        integer :: ysplit, xsplit, xs, ys, i
+        real :: best, current, x, y
+
+        xsplit = 1
+        ysplit = nimages
+        xs = xsplit
+        ys = ysplit
+
+        x = (nx/real(xsplit))
+        y = (ny/real(ysplit))
+
+        if (y > x) then
+            best = abs(1 - ( y / x ))
+        else
+            best = abs(1 - ( x / y ))
+        endif
+
+        do i=nimages,1,-1
+            if (mod(nimages,i)==0) then
+                ysplit = i
+                xsplit = nimages / i
+
+                x = (nx/float(xsplit))
+                y = (ny/float(ysplit))
+
+                if (y > x) then
+                    current = abs(1 - ( y / x ))
+                else
+                    current = abs(1 - ( x / y ))
+                endif
+
+                if (current < best) then
+                    best = current
+                    xs = xsplit
+                    ys = ysplit
+                endif
+            endif
+        enddo
+
+        this%ximages = xs
+        this%yimages = ys
+
+        this%ximg = mod(this_image(),  this%ximages)
+        this%yimg =     this_image() / this%ximages
+
+        if (assertions) call assert((xs*ys) == nimages, "Number of tiles does not sum to number of images")
+
+    end subroutine domain_decomposition
+
+    !> -------------------------------
     !! Initialize the domain reading grid dimensions from an input file
     !!
     !! -------------------------------
@@ -257,55 +318,69 @@ contains
       write(error_message,*)"image ",this_image()," could not close file " // trim(file_name)
       if (assertions) call assert(stat==0,error_message)
 
-      this%nx = nx
+      this%nx_global = nx
       this%ny_global = ny
-      this%ny = my_ny(ny)
+      call this%domain_decomposition(nx, ny, num_images())
+      this%nx = my_n(nx, this%ximg, this%ximages)
+      this%ny = my_n(ny, this%yimg, this%yimages)
       this%nz = nz
       if (this_image()==1) print *,"call master_initialize(this)"
       call master_initialize(this)
     end subroutine
 
+    !> -------------------------------
+    !! Initialize the size of the domain using constant dimensions
+    !!
+    !! -------------------------------
     module subroutine default_initialize(this)
       class(domain_t), intent(inout) :: this
       integer, parameter :: nx_global=200,ny_global=200,nz_global=20
 
-      this%nx = nx_global
-      this%ny = my_ny(ny_global)
+      this%nx_global = nx_global
+      this%ny_global = ny_global
+      call this%domain_decomposition(nx_global, ny_global, num_images())
+      this%nx = my_n(nx_global, this%ximg, this%ximages)
+      this%ny = my_n(ny_global, this%yimg, this%yimages)
       this%nz = nz_global
       call master_initialize(this)
     end subroutine
 
-    function my_ny(ny_global) result(ny_local)
-       integer, intent(in) :: ny_global
-       integer :: ny_local
-       associate(me=>this_image(),ni=>num_images())
-         ny_local = ny_global/ni + merge(1,0,me <= mod(ny_global,ni)  )
-       end associate
+
+    !> -------------------------------
+    !! Compute the number of grid cells in the current image along a dimension
+    !!
+    !! This takes care of the fact that generally the number of images will not evenly divide the number of grid cells
+    !! In this case the extra grid cells need to be evenly distributed among all images
+    !!
+    !! n_global should be the full domain size of the dimension
+    !! me should be this images image number along this dimension
+    !! nimg should be the number of images this dimension will be divided into
+    !!
+    !! -------------------------------
+    function my_n(n_global, me, nimg) result(n_local)
+       integer, intent(in) :: n_global, me, nimg
+       integer :: n_local
+
+       ! add 1 if this image is less than the remainder that need an extra grid cell
+       n_local = n_global / nimg + merge(1,0,me <= mod(n_global,nimg)  )
     end function
 
-    function my_jstart(ny_global) result(jms)
+    function my_start(n_global, me, nimg) result(memory_start)
         implicit none
-        integer, intent(in) :: ny_global
-        integer :: jms
-        integer :: base_ny
+        integer, intent(in) :: n_global, me, nimg
+        integer :: memory_start
+        integer :: base_n
 
-        associate(me=>this_image(),ni=>num_images())
-            base_ny = ny_global/ni
+        base_n = n_global / nimg
 
-            jms = (me-1)*(base_ny) + min(me-1,mod(ny_global,ni)) + 1
-            ! if (me<=mod(ny_global,ni)) then
-            !     jms = (me-1)*(base_ny+1) + 1
-            ! else
-            !     jms = (me-1)*(base_ny) + mod(ny_global,ni) + 1
-            ! endif
-        end associate
+        memory_start = (me-1)*(base_n) + min(me-1,mod(n_global,nimg)) + 1
 
-    end function my_jstart
+    end function my_start
 
     module function get_grid_dimensions(this, nx_extra, ny_extra) result(n)
       class(domain_t), intent(in) :: this
       integer,         intent(in), optional :: nx_extra, ny_extra
-      integer :: n(space_dimension+1)
+      integer :: n(space_dimension+2)
 
       integer :: nx_e, ny_e
 
@@ -314,7 +389,9 @@ contains
       if (present(nx_extra)) nx_e = nx_extra
       if (present(ny_extra)) ny_e = ny_extra
 
-      n = [this%nx + nx_e, this%nz, this%ny + ny_e, my_jstart(this%ny_global + ny_e)]
+      n = [this%nx + nx_e, this%nz, this%ny + ny_e,             &
+           my_start(this%nx_global, this%ximg, this%ximages),   &
+           my_start(this%ny_global, this%yimg, this%yimages)]
 
     end function
 
@@ -381,11 +458,12 @@ contains
       call this%graupel_mass%retrieve(no_sync=.True.)
     end subroutine
 
-    subroutine upwind(q, u,v,w, dt)
+    subroutine upwind(q, u,v,w, dt, ims,ime, jms,jme)
         implicit none
-        real, intent(inout), dimension(:,:,:) :: q
-        real, intent(in),    dimension(:,:,:) :: u, v, w
-        real, intent(in)                      :: dt
+        real,    intent(inout), dimension(:,:,:) :: q
+        real,    intent(in),    dimension(:,:,:) :: u, v, w
+        real,    intent(in)                      :: dt
+        integer, intent(in)                      :: ims,ime, jms,jme
 
         real, allocatable :: uflux(:,:,:), vflux(:,:,:), wflux(:,:,:)
 
@@ -397,18 +475,18 @@ contains
             allocate(vflux(nx, nz, ny), source=0.)
             allocate(wflux(nx, nz, ny), source=0.)
 
-            uflux = u(2:nx+1,:, :    ) * dt * q
-            vflux = v( :    ,:,2:ny+1) * dt * q
-            wflux = w( :    ,:, :    ) * dt * q
+            uflux = u(ims+1:ime+1,:,  jms:jme  ) * dt * q
+            vflux = v(  ims:ime  ,:,jms+1:jme+1) * dt * q
+            wflux = w(  ims:ime  ,:,  jms:jme  ) * dt * q
 
             ! ultimately this will need to be more sophisticated, but for testing purposes this works
             ! q = q + (inflow - outflow)
-            q(2:nx-1,:,2:ny-1) = q(2:nx-1,:,2:ny-1)                                 &
+            q(ims+1:ime-1,:,jms+1:jme-1) = q(ims+1:ime-1,:,jms+1:jme-1)                                 &
                                + (uflux(1:nx-2,:,2:ny-1) - uflux(2:nx-1,:,2:ny-1))  &
                                + (vflux(2:nx-1,:,1:ny-2) - vflux(2:nx-1,:,2:ny-1))
             ! vertical fluxes are handled separately
-            q(2:nx-1,1:nz,2:ny-1) = q(2:nx-1,1:nz,2:ny-1) - wflux(2:nx-1,1:nz,2:ny-1)
-            q(2:nx-1,2:nz,2:ny-1) = q(2:nx-1,2:nz,2:ny-1) + wflux(2:nx-1,1:nz-1,2:ny-1)
+            q(ims+1:ime-1,1:nz,jms+1:jme-1) = q(ims+1:ime-1,1:nz,jms+1:jme-1) - wflux(2:nx-1,1:nz,2:ny-1)
+            q(ims+1:ime-1,2:nz,jms+1:jme-1) = q(ims+1:ime-1,2:nz,jms+1:jme-1) + wflux(2:nx-1,1:nz-1,2:ny-1)
 
         end associate
 
@@ -424,16 +502,21 @@ contains
 
         associate(u=>this%u%local, &
                   v=>this%v%local, &
-                  w=>this%w%local)
-            call upwind(this%water_vapor%local,             u, v, w, dt)
-            call upwind(this%potential_temperature%local,   u, v, w, dt)
-            call upwind(this%cloud_water_mass%local,        u, v, w, dt)
-            call upwind(this%cloud_ice_mass%local,          u, v, w, dt)
-            call upwind(this%cloud_ice_number%local,        u, v, w, dt)
-            call upwind(this%rain_mass%local,               u, v, w, dt)
-            call upwind(this%rain_number%local,             u, v, w, dt)
-            call upwind(this%snow_mass%local,               u, v, w, dt)
-            call upwind(this%graupel_mass%local,            u, v, w, dt)
+                  w=>this%w%local, &
+                  ims=>this%ims, &
+                  ime=>this%ime, &
+                  jms=>this%jms, &
+                  jme=>this%jme)
+
+            call upwind(this%water_vapor%local,             u, v, w, dt, ims,ime, jms,jme)
+            call upwind(this%potential_temperature%local,   u, v, w, dt, ims,ime, jms,jme)
+            call upwind(this%cloud_water_mass%local,        u, v, w, dt, ims,ime, jms,jme)
+            call upwind(this%cloud_ice_mass%local,          u, v, w, dt, ims,ime, jms,jme)
+            call upwind(this%cloud_ice_number%local,        u, v, w, dt, ims,ime, jms,jme)
+            call upwind(this%rain_mass%local,               u, v, w, dt, ims,ime, jms,jme)
+            call upwind(this%rain_number%local,             u, v, w, dt, ims,ime, jms,jme)
+            call upwind(this%snow_mass%local,               u, v, w, dt, ims,ime, jms,jme)
+            call upwind(this%graupel_mass%local,            u, v, w, dt, ims,ime, jms,jme)
         end associate
 
     end subroutine
