@@ -1,6 +1,7 @@
 module domain_interface
   use configuration_interface, only : configuration_t
   use exchangeable_interface, only : exchangeable_t
+  use grid_interface, only: grid_t
   implicit none
 
   private
@@ -112,11 +113,11 @@ module domain_interface
     end subroutine
 
     ! Return x, y, z dimensions of grid
-    module function get_grid_dimensions(this, nx_extra, ny_extra) result(n)
+    module function get_grid_dimensions(this, nx_extra, ny_extra) result(grid)
       implicit none
       class(domain_t), intent(in) :: this
       integer,         intent(in), optional :: nx_extra, ny_extra
-      integer :: n(space_dimension+2)
+      type(grid_t) :: grid
     end function
 
     ! Input domain_t object from file

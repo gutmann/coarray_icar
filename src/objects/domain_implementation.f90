@@ -1,6 +1,8 @@
 submodule(domain_interface) domain_implementation
   use assertions_interface, only : assert,assertions
   use iso_fortran_env, only : error_unit
+  use grid_interface, only : grid_t
+
   implicit none
 
 contains
@@ -60,7 +62,7 @@ contains
         call this%snow_mass%initialize(             this%get_grid_dimensions(),snow_mass_test_val)
         call this%graupel_mass%initialize(          this%get_grid_dimensions(),graupel_mass_test_val)
 
-        this%potential_temperature%local(1,:,:)=this%potential_temperature%local(1,:,:)-10
+        ! this%potential_temperature%local(1,:,:)=this%potential_temperature%local(1,:,:)-10
         ! Note, this can be used to create a change in water vapor at the upwind boundary so that it
         ! can be advected across the domain and permitted to interact with other species
         ! if (this_image()==1) then
@@ -377,10 +379,10 @@ contains
 
     end function my_start
 
-    module function get_grid_dimensions(this, nx_extra, ny_extra) result(n)
+    module function get_grid_dimensions(this, nx_extra, ny_extra) result(grid)
       class(domain_t), intent(in) :: this
       integer,         intent(in), optional :: nx_extra, ny_extra
-      integer :: n(space_dimension+2)
+      type(grid_t) :: grid
 
       integer :: nx_e, ny_e
 
@@ -389,9 +391,19 @@ contains
       if (present(nx_extra)) nx_e = nx_extra
       if (present(ny_extra)) ny_e = ny_extra
 
-      n = [this%nx + nx_e, this%nz, this%ny + ny_e,             &
-           my_start(this%nx_global, this%ximg, this%ximages),   &
-           my_start(this%ny_global, this%yimg, this%yimages)]
+      grid%yimg       = this%yimg
+      grid%ximg       = this%ximg
+      grid%yimages    = this%yimages
+      grid%ximages    = this%ximages
+      grid%ims        = my_start(this%nx_global, this%ximg, this%ximages)
+      grid%ime        = grid%ims + this%nx + nx_e - 1
+      grid%jms        = my_start(this%ny_global, this%yimg, this%yimages)
+      grid%jme        = grid%jms + this%ny + ny_e - 1
+      grid%kms        = 1
+      grid%kme        = this%nz
+      grid%ns_halo_nx = this%nx + 1
+      grid%ew_halo_ny = this%ny + 1
+      grid%halo_nz    = this%nz
 
     end function
 

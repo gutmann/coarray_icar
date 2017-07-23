@@ -51,24 +51,6 @@ link := $(compile)
 # objects_source := $(shell ls $(objects_dir)/*.f90)
 # bare_objects_source := $(subst $(objects_dir)/,,$(objects_source)) # Eliminate paths
 #
-# utilities_source := $(shell ls $(utilities)/*.f90)
-# bare_utilities_source := $(subst $(utilities)/,,$(utilities_source)) # Eliminate paths
-#
-# physics_source := $(shell ls $(physics)/*.f90)
-# bare_physics_source := $(subst $(physics)/,,$(physics_source)) # Eliminate paths
-#
-# tests_source := $(shell ls $(tests_dir)/*.f90)
-# bare_tests_source := $(subst $(tests_dir)/,,$(tests_source)) # Eliminate paths
-#
-# source_files := $(bare_objects_source) $(bare_utilities_source) $(bare_tests_source) $(bare_physics_source)
-#
-# bare_objects_source := $(subst $(objects_dir),$(BUILD),$(objects_source)) # Eliminate paths
-# bare_utilities_source := $(subst $(utilities),$(BUILD),$(utilities_source)) # Eliminate paths
-# bare_physics_source := $(subst $(physics),$(BUILD),$(physics_source)) # Eliminate paths
-# bare_tests_source := $(subst $(tests_dir),$(BUILD),$(tests_source)) # Eliminate paths
-#
-# build_source_files := $(bare_objects_source) $(bare_utilities_source) $(bare_tests_source) $(bare_physics_source)
-#
 # # Swap .f90 file extensions for .o extensions
 # object_files := $(subst .f90,.o,$(build_source_files))
 
@@ -85,6 +67,8 @@ test-ideal: \
 			$(BUILD)/configuration_implementation.o	\
 			$(BUILD)/configuration_interface.o		\
 			$(BUILD)/test-ideal.o					\
+			$(BUILD)/grid_interface.o				\
+			$(BUILD)/grid_implementation.o			\
 			$(BUILD)/mp_driver.o					\
 			$(BUILD)/mp_thompson.o
 	$(link) $^ -o $@ $(link_flags)
@@ -99,6 +83,8 @@ test-initialization: \
 					 $(BUILD)/configuration_implementation.o\
 					 $(BUILD)/configuration_interface.o		\
 					 $(BUILD)/test-initialization.o			\
+					 $(BUILD)/grid_interface.o				\
+					 $(BUILD)/grid_implementation.o			\
 					 $(BUILD)/mp_driver.o					\
 					 $(BUILD)/mp_thompson.o
 	$(link) $^ -o $@ $(link_flags)
@@ -119,6 +105,7 @@ $(BUILD)/test-initialization.o: test-initialization.f90 		\
 								$(BUILD)/domain_interface.o     \
 								$(BUILD)/assertions_interface.o \
 								$(BUILD)/mp_driver.o			\
+								$(BUILD)/grid_interface.o		\
 								$(BUILD)/timer_interface.o
 	$(compile) $(opt) -c $< -o $@
 
@@ -126,6 +113,7 @@ $(BUILD)/test-ideal.o: 	test-ideal.f90					\
 						$(BUILD)/domain_interface.o 	\
 						$(BUILD)/assertions_interface.o \
 						$(BUILD)/mp_driver.o			\
+						$(BUILD)/grid_interface.o		\
 						$(BUILD)/timer_interface.o
 	$(compile) $(opt) -c $< -o $@
 
@@ -133,29 +121,36 @@ $(BUILD)/test-timer.o: test-timer.f90 $(BUILD)/timer_interface.o
 	$(compile) $(opt) -c $< -o $@
 
 
-$(BUILD)/timer_implementation.o: $(BUILD)/timer_interface.o
+$(BUILD)/mp_driver.o: 					$(BUILD)/mp_thompson.o 				\
+										$(BUILD)/domain_interface.o
 
-$(BUILD)/assertions_implementation.o: $(BUILD)/assertions_interface.o
+$(BUILD)/grid_implementation.o: 		$(BUILD)/grid_interface.o
 
-$(BUILD)/domain_interface.o: 	$(BUILD)/configuration_interface.o \
-								$(BUILD)/exchangeable_interface.o
+$(BUILD)/timer_implementation.o: 		$(BUILD)/timer_interface.o
 
-$(BUILD)/exchangeable_implementation.o: $(BUILD)/exchangeable_interface.o
+$(BUILD)/assertions_implementation.o: 	$(BUILD)/assertions_interface.o
+
+$(BUILD)/exchangeable_interface.o: 		$(BUILD)/grid_interface.o
+
+$(BUILD)/exchangeable_implementation.o: $(BUILD)/exchangeable_interface.o 	\
+										$(BUILD)/grid_interface.o
 
 $(BUILD)/configuration_implementation.o: $(BUILD)/configuration_interface.o
 
-$(BUILD)/domain_implementation.o: 	$(BUILD)/domain_interface.o \
-									$(BUILD)/assertions_interface.o
+$(BUILD)/domain_interface.o: 			$(BUILD)/configuration_interface.o 	\
+										$(BUILD)/exchangeable_interface.o	\
+										$(BUILD)/grid_interface.o
 
-$(BUILD)/mp_driver.o: 	$(BUILD)/mp_thompson.o \
-						$(BUILD)/domain_interface.o
+$(BUILD)/domain_implementation.o: 		$(BUILD)/domain_interface.o 		\
+										$(BUILD)/assertions_interface.o		\
+										$(BUILD)/grid_interface.o
 
 
 $(info $$BUILD        = ${BUILD})
-$(info $$tests_dir        = ${tests_dir})
-$(info $$objects_dir        = ${objects_dir})
-$(info $$utilities        = ${utilities})
-$(info $$physics        = ${physics})
+$(info $$tests_dir    = ${tests_dir})
+$(info $$objects_dir  = ${objects_dir})
+$(info $$utilities    = ${utilities})
+$(info $$physics      = ${physics})
 
 # Prefer files in the present working directory (picks the local main over another main)
 # %.o: %.f90
