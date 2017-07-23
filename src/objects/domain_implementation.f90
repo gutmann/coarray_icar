@@ -36,7 +36,7 @@ contains
       real :: sine_curve
 
       associate(                                            &
-        u_test_val=>0.0, v_test_val=>0.5, w_test_val=>0.0,  &
+        u_test_val=>0.5, v_test_val=>0.5, w_test_val=>0.0,  &
         water_vapor_test_val            => 0.001,           &
         potential_temperature_test_val  => 300.0,           &
         cloud_water_mass_test_val       => 0.0,             &
@@ -289,8 +289,11 @@ contains
         this%ximages = xs
         this%yimages = ys
 
-        this%ximg = mod(this_image(),  this%ximages)
-        this%yimg =     this_image() / this%ximages
+        this%ximg = mod(this_image()-1,  this%ximages)+1
+        this%yimg = floor(real(this_image()-1) / this%ximages)+1
+
+        x = (nx/float(xs))
+        y = (ny/float(ys))
 
         if (assertions) call assert((xs*ys) == nimages, "Number of tiles does not sum to number of images")
 
@@ -470,12 +473,11 @@ contains
       call this%graupel_mass%retrieve(no_sync=.True.)
     end subroutine
 
-    subroutine upwind(q, u,v,w, dt, ims,ime, jms,jme)
+    subroutine upwind(q, u,v,w, dt)
         implicit none
-        real,    intent(inout), dimension(:,:,:) :: q
-        real,    intent(in),    dimension(:,:,:) :: u, v, w
-        real,    intent(in)                      :: dt
-        integer, intent(in)                      :: ims,ime, jms,jme
+        real, intent(inout), dimension(:,:,:) :: q
+        real, intent(in),    dimension(:,:,:) :: u, v, w
+        real, intent(in)                      :: dt
 
         real, allocatable :: uflux(:,:,:), vflux(:,:,:), wflux(:,:,:)
 
@@ -487,18 +489,18 @@ contains
             allocate(vflux(nx, nz, ny), source=0.)
             allocate(wflux(nx, nz, ny), source=0.)
 
-            uflux = u(ims+1:ime+1,:,  jms:jme  ) * dt * q
-            vflux = v(  ims:ime  ,:,jms+1:jme+1) * dt * q
-            wflux = w(  ims:ime  ,:,  jms:jme  ) * dt * q
+            uflux = u(2:nx+1,:, :    ) * dt * q
+            vflux = v( :    ,:,2:ny+1) * dt * q
+            wflux = w( :    ,:, :    ) * dt * q
 
             ! ultimately this will need to be more sophisticated, but for testing purposes this works
             ! q = q + (inflow - outflow)
-            q(ims+1:ime-1,:,jms+1:jme-1) = q(ims+1:ime-1,:,jms+1:jme-1)                                 &
+            q(2:nx-1,:,2:ny-1) = q(2:nx-1,:,2:ny-1)                                 &
                                + (uflux(1:nx-2,:,2:ny-1) - uflux(2:nx-1,:,2:ny-1))  &
                                + (vflux(2:nx-1,:,1:ny-2) - vflux(2:nx-1,:,2:ny-1))
             ! vertical fluxes are handled separately
-            q(ims+1:ime-1,1:nz,jms+1:jme-1) = q(ims+1:ime-1,1:nz,jms+1:jme-1) - wflux(2:nx-1,1:nz,2:ny-1)
-            q(ims+1:ime-1,2:nz,jms+1:jme-1) = q(ims+1:ime-1,2:nz,jms+1:jme-1) + wflux(2:nx-1,1:nz-1,2:ny-1)
+            q(2:nx-1,1:nz,2:ny-1) = q(2:nx-1,1:nz,2:ny-1) - wflux(2:nx-1,1:nz,2:ny-1)
+            q(2:nx-1,2:nz,2:ny-1) = q(2:nx-1,2:nz,2:ny-1) + wflux(2:nx-1,1:nz-1,2:ny-1)
 
         end associate
 
@@ -514,21 +516,16 @@ contains
 
         associate(u=>this%u%local, &
                   v=>this%v%local, &
-                  w=>this%w%local, &
-                  ims=>this%ims, &
-                  ime=>this%ime, &
-                  jms=>this%jms, &
-                  jme=>this%jme)
-
-            call upwind(this%water_vapor%local,             u, v, w, dt, ims,ime, jms,jme)
-            call upwind(this%potential_temperature%local,   u, v, w, dt, ims,ime, jms,jme)
-            call upwind(this%cloud_water_mass%local,        u, v, w, dt, ims,ime, jms,jme)
-            call upwind(this%cloud_ice_mass%local,          u, v, w, dt, ims,ime, jms,jme)
-            call upwind(this%cloud_ice_number%local,        u, v, w, dt, ims,ime, jms,jme)
-            call upwind(this%rain_mass%local,               u, v, w, dt, ims,ime, jms,jme)
-            call upwind(this%rain_number%local,             u, v, w, dt, ims,ime, jms,jme)
-            call upwind(this%snow_mass%local,               u, v, w, dt, ims,ime, jms,jme)
-            call upwind(this%graupel_mass%local,            u, v, w, dt, ims,ime, jms,jme)
+                  w=>this%w%local)
+            call upwind(this%water_vapor%local,             u, v, w, dt)
+            call upwind(this%potential_temperature%local,   u, v, w, dt)
+            call upwind(this%cloud_water_mass%local,        u, v, w, dt)
+            call upwind(this%cloud_ice_mass%local,          u, v, w, dt)
+            call upwind(this%cloud_ice_number%local,        u, v, w, dt)
+            call upwind(this%rain_mass%local,               u, v, w, dt)
+            call upwind(this%rain_number%local,             u, v, w, dt)
+            call upwind(this%snow_mass%local,               u, v, w, dt)
+            call upwind(this%graupel_mass%local,            u, v, w, dt)
         end associate
 
     end subroutine

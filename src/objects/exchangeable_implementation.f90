@@ -46,49 +46,52 @@ contains
       allocate(this%local(ims:ime,kms:kme,jms:jme), source=initial_value)
     end associate
 
-    allocate( this%halo_south_in( grid%ns_halo_nx, grid%halo_nz,   halo_size    )[*], source=initial_value)
-    allocate( this%halo_north_in( grid%ns_halo_nx, grid%halo_nz,   halo_size    )[*], source=initial_value)
-    allocate( this%halo_east_in(    halo_size,     grid%halo_nz, grid%ew_halo_ny)[*], source=initial_value)
-    allocate( this%halo_west_in(    halo_size,     grid%halo_nz, grid%ew_halo_ny)[*], source=initial_value)
+    allocate( this%halo_south_in( grid%ns_halo_nx+halo_size*2, grid%halo_nz,   halo_size    )[*], source=initial_value)
+    allocate( this%halo_north_in( grid%ns_halo_nx+halo_size*2, grid%halo_nz,   halo_size    )[*], source=initial_value)
+    allocate( this%halo_east_in(    halo_size,     grid%halo_nz, grid%ew_halo_ny+halo_size*2)[*], source=initial_value)
+    allocate( this%halo_west_in(    halo_size,     grid%halo_nz, grid%ew_halo_ny+halo_size*2)[*], source=initial_value)
 
 
     ! set up the neighbors array so we can sync with our neighbors when needed
-    associate(me=>this_image())
-      south_neighbor = me - grid%ximages
-      north_neighbor = me + grid%ximages
-      east_neighbor  = me + 1
-      west_neighbor  = me - 1
+    if (.not.allocated(neighbors)) then
+      associate(me=>this_image())
+        south_neighbor = me - grid%ximages
+        north_neighbor = me + grid%ximages
+        east_neighbor  = me + 1
+        west_neighbor  = me - 1
 
-      n_neighbors = merge(0,1,this%south_boundary)  &
-                   +merge(0,1,this%north_boundary)  &
-                   +merge(0,1,this%east_boundary)   &
-                   +merge(0,1,this%west_boundary)
-      n_neighbors = max(1, n_neighbors)
+        n_neighbors = merge(0,1,this%south_boundary)  &
+                     +merge(0,1,this%north_boundary)  &
+                     +merge(0,1,this%east_boundary)   &
+                     +merge(0,1,this%west_boundary)
+        n_neighbors = max(1, n_neighbors)
 
-      allocate(neighbors(n_neighbors))
-      current = 1
-      if (.not. this%south_boundary) then
-          neighbors(current) = south_neighbor
-          current = current+1
-      endif
-      if (.not. this%north_boundary) then
-          neighbors(current) = north_neighbor
-          current = current+1
-      endif
-      if (.not. this%east_boundary) then
-          neighbors(current) = east_neighbor
-          current = current+1
-      endif
-      if (.not. this%west_boundary) then
-          neighbors(current) = west_neighbor
-          current = current+1
-      endif
-      ! if current = 1 then all of the boundaries were set, just store ourself as our "neighbor"
-      if (current == 1) then
-          neighbors(current) = me
-      endif
+        allocate(neighbors(n_neighbors))
 
-    end associate
+        current = 1
+        if (.not. this%south_boundary) then
+            neighbors(current) = south_neighbor
+            current = current+1
+        endif
+        if (.not. this%north_boundary) then
+            neighbors(current) = north_neighbor
+            current = current+1
+        endif
+        if (.not. this%east_boundary) then
+            neighbors(current) = east_neighbor
+            current = current+1
+        endif
+        if (.not. this%west_boundary) then
+            neighbors(current) = west_neighbor
+            current = current+1
+        endif
+        ! if current = 1 then all of the boundaries were set, just store ourself as our "neighbor"
+        if (current == 1) then
+            neighbors(current) = me
+        endif
+
+      end associate
+    endif
 
   end subroutine
 
@@ -141,12 +144,12 @@ contains
 
       if (assertions) then
         !! gfortran 6.3.0 doesn't check coarray shape conformity with -fcheck=all so we verify with an assertion
-        call assert( shape(this%halo_south_in(:nx,:,:)[north_neighbor]) &
+        call assert( shape(this%halo_south_in(:nx,:,1:halo_size)[north_neighbor]) &
                      == shape(this%local(:,:,n-halo_size+1:n)),         &
                      "put_north: conformable halo_south_in and local " )
       end if
 
-      this%halo_south_in(:nx,:,:)[north_neighbor] = this%local(:,:,n-halo_size*2+1:n-halo_size)
+      this%halo_south_in(1:nx,:,1:halo_size)[north_neighbor] = this%local(:,:,n-halo_size*2+1:n-halo_size)
   end subroutine
 
   module subroutine put_south(this)
@@ -158,11 +161,11 @@ contains
 
       if (assertions) then
         !! gfortran 6.3.0 doesn't check coarray shape conformity with -fcheck=all so we verify with an assertion
-        call assert( shape(this%halo_north_in(:nx,:,:)[south_neighbor]) &
+        call assert( shape(this%halo_north_in(:nx,:,1:halo_size)[south_neighbor]) &
                      == shape(this%local(:,:,start:start+halo_size-1)), &
                      "put_south: conformable halo_north_in and local " )
       end if
-      this%halo_north_in(:nx,:,:)[south_neighbor] = this%local(:,:,start+halo_size:start+halo_size*2-1)
+      this%halo_north_in(1:nx,:,1:halo_size)[south_neighbor] = this%local(:,:,start+halo_size:start+halo_size*2-1)
   end subroutine
 
   module subroutine retrieve_north_halo(this)
@@ -172,7 +175,7 @@ contains
       n = ubound(this%local,3)
       nx = size(this%local,1)
 
-      this%local(:,:,n-halo_size+1:n) = this%halo_north_in(:nx,:,:)
+      this%local(:,:,n-halo_size+1:n) = this%halo_north_in(:nx,:,1:halo_size)
   end subroutine
 
   module subroutine retrieve_south_halo(this)
@@ -182,7 +185,7 @@ contains
       start = lbound(this%local,3)
       nx = size(this%local,1)
 
-      this%local(:,:,start:start+halo_size-1) = this%halo_south_in(:nx,:,:)
+      this%local(:,:,start:start+halo_size-1) = this%halo_south_in(:nx,:,1:halo_size)
   end subroutine
 
   module subroutine put_east(this)
@@ -193,12 +196,12 @@ contains
 
       if (assertions) then
         !! gfortran 6.3.0 doesn't check coarray shape conformity with -fcheck=all so we verify with an assertion
-        call assert( shape(this%halo_west_in(:,:,:ny)[east_neighbor])       &
+        call assert( shape(this%halo_west_in(1:halo_size,:,:ny)[east_neighbor])       &
                      == shape(this%local(n-halo_size*2+1:n-halo_size,:,:)), &
                      "put_east: conformable halo_west_in and local " )
       end if
 
-      this%halo_west_in(:,:,:ny)[east_neighbor] = this%local(n-halo_size*2+1:n-halo_size,:,:)
+      this%halo_west_in(1:halo_size,:,1:ny)[east_neighbor] = this%local(n-halo_size*2+1:n-halo_size,:,:)
   end subroutine
 
   module subroutine put_west(this)
@@ -210,11 +213,12 @@ contains
 
       if (assertions) then
         !! gfortran 6.3.0 doesn't check coarray shape conformity with -fcheck=all so we verify with an assertion
-        call assert( shape(this%halo_east_in(:,:,:ny)[west_neighbor])               &
+        call assert( shape(this%halo_east_in(1:halo_size,:,:ny)[west_neighbor])               &
                      == shape(this%local(start+halo_size:start+halo_size*2-1,:,:)), &
                      "put_west: conformable halo_east_in and local " )
       end if
-      this%halo_east_in(:,:,:ny)[west_neighbor] = this%local(start+halo_size:start+halo_size*2-1,:,:)
+
+      this%halo_east_in(1:halo_size,:,1:ny)[west_neighbor] = this%local(start+halo_size:start+halo_size*2-1,:,:)
   end subroutine
 
   module subroutine retrieve_east_halo(this)
@@ -224,7 +228,7 @@ contains
       n = ubound(this%local,1)
       ny = size(this%local,3)
 
-      this%local(n-halo_size+1:n,:,:) = this%halo_east_in(:,:,:ny)
+      this%local(n-halo_size+1:n,:,:) = this%halo_east_in(1:halo_size,:,1:ny)
   end subroutine
 
   module subroutine retrieve_west_halo(this)
@@ -234,7 +238,7 @@ contains
       start = lbound(this%local,1)
       ny = size(this%local,3)
 
-      this%local(start:start+halo_size-1,:,:) = this%halo_west_in(:,:,:ny)
+      this%local(start:start+halo_size-1,:,:) = this%halo_west_in(1:halo_size,:,1:ny)
   end subroutine
 
 end submodule
