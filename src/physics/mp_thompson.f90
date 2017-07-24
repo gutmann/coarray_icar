@@ -44,6 +44,9 @@
 !
       MODULE module_mp_thompson
 
+          use co_util, only : co_bcast
+          use timer_interface, only : timer_t
+
 !       USE module_wrf_error
 !       USE module_mp_radar
 ! #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
@@ -416,6 +419,7 @@
       INTEGER:: i, j, k, l, m, n
       REAL:: h_01, niIN3, niCCN3, max_test
       LOGICAL:: micro_init, has_CCN, has_IN
+      type(timer_t) :: timer
 
       is_aerosol_aware = .FALSE.
       micro_init = .FALSE.
@@ -978,19 +982,44 @@
 
 !..Rain collecting graupel & graupel collecting rain.
     !   CALL wrf_debug(200, '  creating rain collecting graupel table')
+      call timer%reset()
+      call timer%start()
       call qr_acr_qg
+      call timer%stop()
+      if (this_image()==1) then
+          print*, "qr_acr_qg initialized:", timer%as_string()
+      endif
+
 
 !..Rain collecting snow & snow collecting rain.
     !   CALL wrf_debug(200, '  creating rain collecting snow table')
+      call timer%reset()
+      call timer%start()
       call qr_acr_qs
+      call timer%stop()
+      if (this_image()==1) then
+          print*, "qr_acr_qs initialized:", timer%as_string()
+      endif
 
 !..Cloud water and rain freezing (Bigg, 1953).
     !   CALL wrf_debug(200, '  creating freezing of water drops table')
+      call timer%reset()
+      call timer%start()
       call freezeH2O
+      call timer%stop()
+      if (this_image()==1) then
+          print*, "freezeH2O initialized:", timer%as_string()
+      endif
 
 !..Conversion of some ice mass into snow category.
     !   CALL wrf_debug(200, '  creating ice converting to snow table')
+      call timer%reset()
+      call timer%start()
       call qi_aut_qs
+      call timer%stop()
+      if (this_image()==1) then
+          print*, "qi_aut_qs initialized:", timer%as_string()
+      endif
 
       endif
 
@@ -3596,7 +3625,7 @@
       if (this_image()==1) then
           INQUIRE(FILE="qr_acr_qg.dat",EXIST=lexist)
           IF ( lexist ) THEN
-            print *, "ThompMP: read qr_acr_qg.dat stead of computing"
+            print *, "ThompMP: read qr_acr_qg.dat instead of computing"
             OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=1234)
             READ(63,err=1234) tcg_racg
             READ(63,err=1234) tmr_racg
@@ -3614,17 +3643,25 @@
             ! broadcast the data to all images
             do i=2,num_images()
                 good[i]     = good
-                tcg_racg(:,:,:,:)[i] = tcg_racg(:,:,:,:)
-                tmr_racg(:,:,:,:)[i] = tmr_racg(:,:,:,:)
-                tcr_gacr(:,:,:,:)[i] = tcr_gacr(:,:,:,:)
-                tmg_gacr(:,:,:,:)[i] = tmg_gacr(:,:,:,:)
-                tnr_racg(:,:,:,:)[i] = tnr_racg(:,:,:,:)
-                tnr_gacr(:,:,:,:)[i] = tnr_gacr(:,:,:,:)
+            !     tcg_racg(:,:,:,:)[i] = tcg_racg(:,:,:,:)
+            !     tmr_racg(:,:,:,:)[i] = tmr_racg(:,:,:,:)
+            !     tcr_gacr(:,:,:,:)[i] = tcr_gacr(:,:,:,:)
+            !     tmg_gacr(:,:,:,:)[i] = tmg_gacr(:,:,:,:)
+            !     tnr_racg(:,:,:,:)[i] = tnr_racg(:,:,:,:)
+            !     tnr_gacr(:,:,:,:)[i] = tnr_gacr(:,:,:,:)
             enddo
           ENDIF
       endif
 
-      sync all()
+      sync all
+      if (good.eq.1) then
+          call co_bcast(tcg_racg, 1, 1, num_images())
+          call co_bcast(tmr_racg, 1, 1, num_images())
+          call co_bcast(tcr_gacr, 1, 1, num_images())
+          call co_bcast(tmg_gacr, 1, 1, num_images())
+          call co_bcast(tnr_racg, 1, 1, num_images())
+          call co_bcast(tnr_gacr, 1, 1, num_images())
+      endif
 
       IF ( good .NE. 1 ) THEN
         if (this_image()==1) print *, "ThompMP: computing qr_acr_qg"
@@ -3793,23 +3830,37 @@
           ENDIF
           do i=2,num_images()
               good[i]     = good
-              tcs_racs1(:,:,:,:)[i] = tcs_racs1(:,:,:,:)
-              tmr_racs1(:,:,:,:)[i] = tmr_racs1(:,:,:,:)
-              tcs_racs2(:,:,:,:)[i] = tcs_racs2(:,:,:,:)
-              tmr_racs2(:,:,:,:)[i] = tmr_racs2(:,:,:,:)
-              tcr_sacr1(:,:,:,:)[i] = tcr_sacr1(:,:,:,:)
-              tms_sacr1(:,:,:,:)[i] = tms_sacr1(:,:,:,:)
-              tcr_sacr2(:,:,:,:)[i] = tcr_sacr2(:,:,:,:)
-              tms_sacr2(:,:,:,:)[i] = tms_sacr2(:,:,:,:)
-              tnr_racs1(:,:,:,:)[i] = tnr_racs1(:,:,:,:)
-              tnr_racs2(:,:,:,:)[i] = tnr_racs2(:,:,:,:)
-              tnr_sacr1(:,:,:,:)[i] = tnr_sacr1(:,:,:,:)
-              tnr_sacr2(:,:,:,:)[i] = tnr_sacr2(:,:,:,:)
+            !   tcs_racs1(:,:,:,:)[i] = tcs_racs1(:,:,:,:)
+            !   tmr_racs1(:,:,:,:)[i] = tmr_racs1(:,:,:,:)
+            !   tcs_racs2(:,:,:,:)[i] = tcs_racs2(:,:,:,:)
+            !   tmr_racs2(:,:,:,:)[i] = tmr_racs2(:,:,:,:)
+            !   tcr_sacr1(:,:,:,:)[i] = tcr_sacr1(:,:,:,:)
+            !   tms_sacr1(:,:,:,:)[i] = tms_sacr1(:,:,:,:)
+            !   tcr_sacr2(:,:,:,:)[i] = tcr_sacr2(:,:,:,:)
+            !   tms_sacr2(:,:,:,:)[i] = tms_sacr2(:,:,:,:)
+            !   tnr_racs1(:,:,:,:)[i] = tnr_racs1(:,:,:,:)
+            !   tnr_racs2(:,:,:,:)[i] = tnr_racs2(:,:,:,:)
+            !   tnr_sacr1(:,:,:,:)[i] = tnr_sacr1(:,:,:,:)
+            !   tnr_sacr2(:,:,:,:)[i] = tnr_sacr2(:,:,:,:)
           enddo
         ENDIF
       endif
 
-      sync all()
+      sync all
+      if (good.eq.1) then
+          call co_bcast(tcs_racs1, 1, 1, num_images())
+          call co_bcast(tmr_racs1, 1, 1, num_images())
+          call co_bcast(tcs_racs2, 1, 1, num_images())
+          call co_bcast(tmr_racs2, 1, 1, num_images())
+          call co_bcast(tcr_sacr1, 1, 1, num_images())
+          call co_bcast(tms_sacr1, 1, 1, num_images())
+          call co_bcast(tcr_sacr2, 1, 1, num_images())
+          call co_bcast(tms_sacr2, 1, 1, num_images())
+          call co_bcast(tnr_racs1, 1, 1, num_images())
+          call co_bcast(tnr_racs2, 1, 1, num_images())
+          call co_bcast(tnr_sacr1, 1, 1, num_images())
+          call co_bcast(tnr_sacr2, 1, 1, num_images())
+      endif
 
       IF ( good .NE. 1 ) THEN
         if (this_image()==1) print *, "ThompMP: computing qr_acr_qs"
@@ -4038,7 +4089,7 @@
       IF ( this_image() == 1 ) THEN
         INQUIRE(FILE="freezeH2O.dat",EXIST=lexist)
         IF ( lexist ) THEN
-          print *, "ThompMP: read freezeH2O.dat stead of computing"
+          print *, "ThompMP: read freezeH2O.dat instead of computing"
           OPEN(63,file="freezeH2O.dat",form="unformatted",err=1234)
           READ(63,err=1234)tpi_qrfz
           READ(63,err=1234)tni_qrfz
@@ -4054,17 +4105,26 @@
           endif
           do i=2,num_images()
               good[i]     = good
-              tpi_qrfz(:,:,:,:)[i] = tpi_qrfz(:,:,:,:)
-              tni_qrfz(:,:,:,:)[i] = tni_qrfz(:,:,:,:)
-              tpg_qrfz(:,:,:,:)[i] = tpg_qrfz(:,:,:,:)
-              tnr_qrfz(:,:,:,:)[i] = tnr_qrfz(:,:,:,:)
-              tpi_qcfz(:,:,:,:)[i] = tpi_qcfz(:,:,:,:)
-              tni_qcfz(:,:,:,:)[i] = tni_qcfz(:,:,:,:)
+            !   tpi_qrfz(:,:,:,:)[i] = tpi_qrfz(:,:,:,:)
+            !   tni_qrfz(:,:,:,:)[i] = tni_qrfz(:,:,:,:)
+            !   tpg_qrfz(:,:,:,:)[i] = tpg_qrfz(:,:,:,:)
+            !   tnr_qrfz(:,:,:,:)[i] = tnr_qrfz(:,:,:,:)
+            !   tpi_qcfz(:,:,:,:)[i] = tpi_qcfz(:,:,:,:)
+            !   tni_qcfz(:,:,:,:)[i] = tni_qcfz(:,:,:,:)
           enddo
         ENDIF
       ENDIF
 
-      sync all()
+      sync all
+      if (good.eq.1) then
+          call co_bcast(tpi_qrfz, 1, 1, num_images())
+          call co_bcast(tni_qrfz, 1, 1, num_images())
+          call co_bcast(tpg_qrfz, 1, 1, num_images())
+          call co_bcast(tnr_qrfz, 1, 1, num_images())
+          call co_bcast(tpi_qcfz, 1, 1, num_images())
+          call co_bcast(tni_qcfz, 1, 1, num_images())
+      endif
+
 
       IF ( good .NE. 1 ) THEN
         if (this_image()==1) print *, "ThompMP: computing freezeH2O"

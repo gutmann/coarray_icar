@@ -32,8 +32,8 @@ ifeq ($(compiler),gnu)
   compile := caf
   opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
   link_flags := -fcheck=all -Wall -fbacktrace -g
-  # opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
-  # link_flags := -Ofast
+  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
+  link_flags := -Ofast
   lib :=
 else
   ifeq ($(compiler),intel)
@@ -56,6 +56,7 @@ link := $(compile)
 
 # Executable depends on object files
 test-ideal: \
+			$(BUILD)/test-ideal.o					\
 			$(BUILD)/domain_implementation.o		\
 			$(BUILD)/domain_interface.o				\
 			$(BUILD)/exchangeable_implementation.o	\
@@ -66,15 +67,16 @@ test-ideal: \
 			$(BUILD)/assertions_interface.o			\
 			$(BUILD)/configuration_implementation.o	\
 			$(BUILD)/configuration_interface.o		\
-			$(BUILD)/test-ideal.o					\
 			$(BUILD)/grid_interface.o				\
 			$(BUILD)/grid_implementation.o			\
+			$(BUILD)/co_utilities.o					\
 			$(BUILD)/mp_driver.o					\
 			$(BUILD)/mp_thompson.o
 	$(link) $^ -o $@ $(link_flags)
 
 test-initialization: \
-					$(BUILD)/domain_implementation.o 		\
+					 $(BUILD)/test-initialization.o			\
+					 $(BUILD)/domain_implementation.o 		\
 					 $(BUILD)/domain_interface.o 			\
 					 $(BUILD)/exchangeable_implementation.o	\
 					 $(BUILD)/exchangeable_interface.o		\
@@ -82,9 +84,11 @@ test-initialization: \
 					 $(BUILD)/assertions_interface.o		\
 					 $(BUILD)/configuration_implementation.o\
 					 $(BUILD)/configuration_interface.o		\
-					 $(BUILD)/test-initialization.o			\
+					 $(BUILD)/timer_implementation.o		\
+		 			 $(BUILD)/timer_interface.o				\
 					 $(BUILD)/grid_interface.o				\
 					 $(BUILD)/grid_implementation.o			\
+					 $(BUILD)/co_utilities.o				\
 					 $(BUILD)/mp_driver.o					\
 					 $(BUILD)/mp_thompson.o
 	$(link) $^ -o $@ $(link_flags)
@@ -109,6 +113,9 @@ $(BUILD)/test-initialization.o: test-initialization.f90 		\
 								$(BUILD)/timer_interface.o
 	$(compile) $(opt) -c $< -o $@
 
+# $(BUILD)/test-bcast.o:  test-bcast.f90		\
+# 						$(BUILD)/co_utilities.o
+
 $(BUILD)/test-ideal.o: 	test-ideal.f90					\
 						$(BUILD)/domain_interface.o 	\
 						$(BUILD)/assertions_interface.o \
@@ -120,6 +127,9 @@ $(BUILD)/test-ideal.o: 	test-ideal.f90					\
 $(BUILD)/test-timer.o: test-timer.f90 $(BUILD)/timer_interface.o
 	$(compile) $(opt) -c $< -o $@
 
+
+$(BUILD)/mp_thompson.o: 				$(BUILD)/timer_interface.o			\
+										$(BUILD)/co_utilities.o
 
 $(BUILD)/mp_driver.o: 					$(BUILD)/mp_thompson.o 				\
 										$(BUILD)/domain_interface.o
