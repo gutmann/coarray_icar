@@ -11,18 +11,6 @@ program main
 
   block
     type(domain_t) :: domain
-    if (num_images() < 50) then
-        if (this_image()==1) print *,"domain%default_initialize()"
-        call domain%default_initialize()
-    else
-        if (this_image()==1) then
-            print *, "Skipping default initialization because there are too many images."
-        endif
-    endif
-  end block
-
-  block
-    type(domain_t) :: domain
     integer :: i,nz, ypos
     type(timer_t) :: timer
 
