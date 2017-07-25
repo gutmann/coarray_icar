@@ -24,8 +24,7 @@ install_dir := $(root)/bin
 
 executable := test-ideal test-initialization test-timer
 # Options: gnu, intel
-compiler := gnu
-# compiler := intel
+compiler := cray
 
 # Specify the compiler invocation name and flags
 ifeq ($(compiler),gnu)
@@ -42,6 +41,13 @@ else
 	opt := -standard-semantics -coarray -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
     link_flags := -standard-semantics -coarray -check all -traceback -g
     lib :=
+  else
+    ifeq ($(compiler),cray)
+      compile := ftn
+      link_flags :=
+      opt := -e T -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+      lib :=
+    endif
   endif
 endif
 link := $(compile)
