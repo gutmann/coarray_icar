@@ -10,7 +10,7 @@ program main
 
 
   block
-    type(domain_t) :: domain
+    type(domain_t), save :: domain
     integer :: i,nz, ypos
     type(timer_t) :: timer
 
