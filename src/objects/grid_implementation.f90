@@ -1,5 +1,5 @@
 submodule(grid_interface) grid_implementation
-  use assertions_interface, only : assert, assertions
+  ! use assertions_interface, only : assert, assertions
   implicit none
 
 
