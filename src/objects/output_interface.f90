@@ -27,37 +27,37 @@ module output_interface
       character(len=kMAX_DIM_LENGTH) :: dimensions(kMAX_DIMENSIONS)
 
   contains
-      private
-      procedure, public :: add_to_output
-      procedure, public :: write
 
-      procedure :: init
-      procedure :: increase_holding_capacity
+      procedure, public  :: add_to_output
+      procedure, public  :: write
+
+      procedure, private :: init
+      procedure, private :: increase_holding_capacity
   end type
 
   interface
 
-      module procedure init(this)
+      module subroutine init(this)
           implicit none
           class(output_t),   intent(inout)  :: this
-      end procedure
+      end subroutine
 
-      module procedure increase_holding_capacity(this)
+      module subroutine increase_holding_capacity(this)
           implicit none
           class(output_t),   intent(inout)  :: this
-      end procedure
+      end subroutine
 
-      module procedure add_to_output(this, variable)
+      module subroutine add_to_output(this, variable)
           implicit none
           class(output_t),   intent(inout)  :: this
           class(variable_t), intent(in)     :: variable
-      end procedure
+      end subroutine
 
-      module procedure write(this, filename)
+      module subroutine write(this, filename)
           implicit none
           class(output_t),   intent(in)     :: this
           character(len=kMAX_FILE_LENGTH), intent(in) :: filename
-      end procedure
+      end subroutine
 
   end interface
 end module

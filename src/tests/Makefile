@@ -132,6 +132,10 @@ test-timer: \
 			$(BUILD)/timer_implementation.o
 	$(link) $^ -o $@ $(link_flags)
 
+test-output: \
+			$(BUILD)/test-output.o			\
+			$(BUILD)/variable_interface.o	\
+			$(BUILD)/output_interface.o
 
 install: $(executable)
 	mkdir -p $(install_dir)
@@ -160,6 +164,9 @@ $(BUILD)/test-ideal.o: 	test-ideal.f90					\
 $(BUILD)/test-timer.o: test-timer.f90 $(BUILD)/timer_interface.o
 	$(compile) $(comp_flags) -c $< -o $@
 
+$(BUILD)/test-output.o: test-output.f90 $(BUILD)/output_interface.o		\
+									  	$(BUILD)/variable_interface.o
+
 
 $(BUILD)/mp_thompson.o: 				$(BUILD)/timer_interface.o			\
 										$(BUILD)/co_utilities.o
@@ -179,6 +186,11 @@ $(BUILD)/exchangeable_interface.o: 		$(BUILD)/grid_interface.o 			\
 $(BUILD)/variable_interface.o:			$(BUILD)/constants.o
 
 $(BUILD)/variable_implementation.o: 	$(BUILD)/variable_interface.o
+
+$(BUILD)/output_implementation.o: 		$(BUILD)/output_interface.o
+
+$(BUILD)/output_interface.o: 			$(BUILD)/variable_interface.o		\
+										$(BUILD)/constants.o
 
 $(BUILD)/exchangeable_implementation.o: $(BUILD)/exchangeable_interface.o 	\
 										$(BUILD)/grid_interface.o
