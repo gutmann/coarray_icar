@@ -10,6 +10,7 @@ doc
 test-ideal
 test-initialization
 test-timer
+test-output
 
 # =========================
 # Temporary datafile

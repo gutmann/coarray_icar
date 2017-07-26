@@ -9,20 +9,18 @@ module output_interface
   private
   public :: output_t
 
-  type variable_ptr
-      type(variable_t), pointer :: ptr
-  end type variable_ptr
-
   type output_t
-      private
-      logical :: is_initialized
-      integer :: n_variables
-      type(variable_ptr), allocatable :: variables(:)
+    !   private
+      logical :: is_initialized = .false.
+      logical :: creating = .false.
+
+      integer :: n_variables = 0
+      type(variable_t), allocatable :: variables(:)
 
       character(len=kMAX_FILE_LENGTH) :: filename
       integer :: ncfile_id
 
-      integer :: n_dims
+      integer :: n_dims = 0
       integer :: dim_ids(kMAX_DIMENSIONS)
       character(len=kMAX_DIM_LENGTH) :: dimensions(kMAX_DIMENSIONS)
 
@@ -55,8 +53,8 @@ module output_interface
 
       module subroutine write(this, filename)
           implicit none
-          class(output_t),   intent(in)     :: this
-          character(len=kMAX_FILE_LENGTH), intent(in) :: filename
+          class(output_t),   intent(inout)     :: this
+          character(len=*), intent(in) :: filename
       end subroutine
 
   end interface

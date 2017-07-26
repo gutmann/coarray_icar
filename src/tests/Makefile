@@ -127,15 +127,18 @@ test-initialization: \
 	$(link) $^ -o $@ $(link_flags)
 
 test-timer: \
-			$(BUILD)/timer_interface.o	\
 			$(BUILD)/test-timer.o		\
+			$(BUILD)/timer_interface.o	\
 			$(BUILD)/timer_implementation.o
 	$(link) $^ -o $@ $(link_flags)
 
 test-output: \
 			$(BUILD)/test-output.o			\
+			$(BUILD)/constants.o			\
 			$(BUILD)/variable_interface.o	\
-			$(BUILD)/output_interface.o
+			$(BUILD)/output_interface.o		\
+			$(BUILD)/output_implementation.o
+	$(link) $^ -o $@ $(link_flags)
 
 install: $(executable)
 	mkdir -p $(install_dir)
@@ -166,6 +169,7 @@ $(BUILD)/test-timer.o: test-timer.f90 $(BUILD)/timer_interface.o
 
 $(BUILD)/test-output.o: test-output.f90 $(BUILD)/output_interface.o		\
 									  	$(BUILD)/variable_interface.o
+	$(compile) $(comp_flags) -c $< -o $@
 
 
 $(BUILD)/mp_thompson.o: 				$(BUILD)/timer_interface.o			\

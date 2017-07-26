@@ -7,7 +7,7 @@ module variable_interface
     ! have to think about how to handle multiple variable types (int, 2d, etc)
     ! could add multiple "local" variables or create multiple variable types...
     type variable_t
-        real, allocatable :: local(:,:,:)
+        real, pointer :: local(:,:,:)
 
         character(len=kMAX_NAME_LENGTH) :: name
         integer                         :: n_attrs
@@ -25,7 +25,7 @@ module variable_interface
 
         ! Note this dummy coarray is only here because types that inherit from variable_t have coarrays
         ! so the parent type is required to...
-        integer, allocatable :: dummy[:]
+        ! integer, allocatable :: dummy[:]
 
     ! contains
     !     procedure, public : add_attribute

@@ -6,9 +6,10 @@ module exchangeable_interface
   private
   public :: exchangeable_t
 
-  type, extends(variable_t) :: exchangeable_t
+  type :: exchangeable_t
     private
-    ! real, allocatable, public :: local(:,:,:)
+    real, allocatable, public  :: local(:,:,:)
+    type(variable_t)  :: meta_data
     real, allocatable :: halo_south_in(:,:,:)[:]
     real, allocatable :: halo_north_in(:,:,:)[:]
     real, allocatable :: halo_west_in(:,:,:)[:]
