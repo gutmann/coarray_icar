@@ -1,13 +1,14 @@
 module exchangeable_interface
   use grid_interface, only : grid_t
+  use variable_interface, only : variable_t
   implicit none
 
   private
   public :: exchangeable_t
 
-  type exchangeable_t
+  type, extends(variable_t) :: exchangeable_t
     private
-    real, allocatable, public :: local(:,:,:)
+    ! real, allocatable, public :: local(:,:,:)
     real, allocatable :: halo_south_in(:,:,:)[:]
     real, allocatable :: halo_north_in(:,:,:)[:]
     real, allocatable :: halo_west_in(:,:,:)[:]
