@@ -25,8 +25,10 @@ tests_dir=.
 coarray_icar_root := ../..
 root := $(HOME)
 
-lib_dirs := -L $(root)/lib $(LIBNETCDF)
-inc_dirs := -I $(root)/inc $(INCNETCDF)
+# lib_dirs := -L $(root)/lib $(LIBNETCDF)
+# inc_dirs := -I $(root)/inc $(INCNETCDF)
+lib_dirs := $(LIBNETCDF)
+inc_dirs := $(INCNETCDF)
 install_dir := $(root)/bin
 
 
@@ -90,6 +92,7 @@ test-ideal: \
 			$(BUILD)/domain_interface.o				\
 			$(BUILD)/exchangeable_implementation.o	\
 			$(BUILD)/exchangeable_interface.o		\
+			$(BUILD)/variable_interface.o			\
 			$(BUILD)/timer_implementation.o			\
 			$(BUILD)/timer_interface.o				\
 			$(BUILD)/assertions_implementation.o	\
@@ -109,6 +112,7 @@ test-initialization: \
 					 $(BUILD)/domain_interface.o 			\
 					 $(BUILD)/exchangeable_implementation.o	\
 					 $(BUILD)/exchangeable_interface.o		\
+		 			 $(BUILD)/variable_interface.o			\
 					 $(BUILD)/assertions_implementation.o	\
 					 $(BUILD)/assertions_interface.o		\
 					 $(BUILD)/configuration_implementation.o\
@@ -169,7 +173,12 @@ $(BUILD)/timer_implementation.o: 		$(BUILD)/timer_interface.o
 
 $(BUILD)/assertions_implementation.o: 	$(BUILD)/assertions_interface.o
 
-$(BUILD)/exchangeable_interface.o: 		$(BUILD)/grid_interface.o
+$(BUILD)/exchangeable_interface.o: 		$(BUILD)/grid_interface.o 			\
+										$(BUILD)/variable_interface.o
+
+$(BUILD)/variable_interface.o:			$(BUILD)/constants.o
+
+$(BUILD)/variable_implementation.o: 	$(BUILD)/variable_interface.o
 
 $(BUILD)/exchangeable_implementation.o: $(BUILD)/exchangeable_interface.o 	\
 										$(BUILD)/grid_interface.o
