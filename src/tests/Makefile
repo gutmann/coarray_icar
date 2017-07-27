@@ -25,8 +25,8 @@ tests_dir=.
 coarray_icar_root := ../..
 root := $(HOME)
 
-lib_dirs := -L $(root)/lib $(LIBNETCDF)
-inc_dirs := -I $(root)/inc $(INCNETCDF)
+lib_dirs := -L $(root)/lib
+inc_dirs := -I $(root)/inc
 install_dir := $(root)/bin
 
 
