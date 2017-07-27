@@ -404,8 +404,8 @@ contains
       grid%jme        = grid%jms + this%ny + ny_e - 1
       grid%kms        = 1
       grid%kme        = this%nz
-      grid%ns_halo_nx = this%nx + 1
-      grid%ew_halo_ny = this%ny + 1
+      grid%ns_halo_nx = this%nx_global / this%ximages + 1 + nx_e
+      grid%ew_halo_ny = this%ny_global / this%yimages + 1 + ny_e
       grid%halo_nz    = this%nz
 
     end function
