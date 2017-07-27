@@ -38,7 +38,15 @@ doc
 # =========================
 # Executables
 # =========================
+test-ideal
 test-initialization
+test-timer
+
+# =========================
+# Temporary datafile
+# =========================
+*.dat
+core
 
 # =========================
 # Compiler-generated files
@@ -47,6 +55,7 @@ test-initialization
 *.[mod]  # Fortran module interface information
 *.[smod] # Fortran submodule interface information
 *.smod
+*.dsym
 
 test-initialization
 input-parameters.txt
