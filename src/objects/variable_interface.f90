@@ -7,7 +7,7 @@ module variable_interface
     ! have to think about how to handle multiple variable types (int, 2d, etc)
     ! could add multiple "local" variables or create multiple variable types...
     type variable_t
-        real, pointer :: local(:,:,:)
+        real, pointer :: local(:,:,:) => null()
 
         character(len=kMAX_NAME_LENGTH) :: name
         integer                         :: n_attrs = 0

@@ -17,7 +17,7 @@ contains
     end subroutine
 
 
-    module subroutine write(this, filename)
+    module subroutine save_file(this, filename)
         class(output_t), intent(inout)  :: this
         character(len=*), intent(in) :: filename
         integer :: err

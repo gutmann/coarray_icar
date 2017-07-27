@@ -108,6 +108,11 @@ contains
 
     this%meta_data = metadata
     this%meta_data%local => this%local
+
+    this%meta_data%dim_len(1) = size(this%local,1)
+    this%meta_data%dim_len(2) = size(this%local,2)
+    this%meta_data%dim_len(3) = size(this%local,3)
+
   end subroutine
 
 

@@ -72,7 +72,7 @@ endif
 comp_flags := $(opt) $(inc_dirs)
 link_flags := $(link_flags) $(lib_dirs)
 
-executable := test-ideal test-initialization test-timer
+executable := test-ideal-output test-ideal test-initialization test-timer
 
 # Locate required source files
 # objects_source := $(shell ls $(objects_dir)/*.f90)
@@ -81,11 +81,34 @@ executable := test-ideal test-initialization test-timer
 # # Swap .f90 file extensions for .o extensions
 # object_files := $(subst .f90,.o,$(build_source_files))
 
-all: test-ideal
+all: test-ideal-output
 
-tests: test-ideal test-initialization test-timer
+tests: test-ideal test-ideal-output test-initialization test-timer
 
 # Executable depends on object files
+test-ideal-output: \
+			$(BUILD)/test-ideal-output.o			\
+			$(BUILD)/output_implementation.o		\
+			$(BUILD)/output_interface.o				\
+			$(BUILD)/domain_implementation.o		\
+			$(BUILD)/domain_interface.o				\
+			$(BUILD)/exchangeable_implementation.o	\
+			$(BUILD)/exchangeable_interface.o		\
+			$(BUILD)/variable_interface.o			\
+			$(BUILD)/timer_implementation.o			\
+			$(BUILD)/timer_interface.o				\
+			$(BUILD)/assertions_implementation.o	\
+			$(BUILD)/assertions_interface.o			\
+			$(BUILD)/configuration_implementation.o	\
+			$(BUILD)/configuration_interface.o		\
+			$(BUILD)/grid_interface.o				\
+			$(BUILD)/grid_implementation.o			\
+			$(BUILD)/constants.o					\
+			$(BUILD)/co_utilities.o					\
+			$(BUILD)/mp_driver.o					\
+			$(BUILD)/mp_thompson.o
+	$(link) $^ -o $@ $(link_flags)
+
 test-ideal: \
 			$(BUILD)/test-ideal.o					\
 			$(BUILD)/domain_implementation.o		\
@@ -101,6 +124,7 @@ test-ideal: \
 			$(BUILD)/configuration_interface.o		\
 			$(BUILD)/grid_interface.o				\
 			$(BUILD)/grid_implementation.o			\
+			$(BUILD)/constants.o					\
 			$(BUILD)/co_utilities.o					\
 			$(BUILD)/mp_driver.o					\
 			$(BUILD)/mp_thompson.o
@@ -121,6 +145,7 @@ test-initialization: \
 		 			 $(BUILD)/timer_interface.o				\
 					 $(BUILD)/grid_interface.o				\
 					 $(BUILD)/grid_implementation.o			\
+					 $(BUILD)/constants.o					\
 					 $(BUILD)/co_utilities.o				\
 					 $(BUILD)/mp_driver.o					\
 					 $(BUILD)/mp_thompson.o
@@ -153,8 +178,14 @@ $(BUILD)/test-initialization.o: test-initialization.f90 		\
 								$(BUILD)/timer_interface.o
 	$(compile) $(comp_flags) -c $< -o $@
 
-# $(BUILD)/test-bcast.o:  test-bcast.f90		\
-# 						$(BUILD)/co_utilities.o
+$(BUILD)/test-ideal-output.o:  test-ideal-output.f90	\
+						$(BUILD)/domain_interface.o 	\
+						$(BUILD)/output_interface.o 	\
+						$(BUILD)/assertions_interface.o \
+						$(BUILD)/mp_driver.o			\
+						$(BUILD)/grid_interface.o		\
+						$(BUILD)/timer_interface.o
+	$(compile) $(comp_flags) -c $< -o $@
 
 $(BUILD)/test-ideal.o: 	test-ideal.f90					\
 						$(BUILD)/domain_interface.o 	\

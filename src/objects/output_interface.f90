@@ -27,7 +27,7 @@ module output_interface
   contains
 
       procedure, public  :: add_to_output
-      procedure, public  :: write
+      procedure, public  :: save_file
 
       procedure, private :: init
       procedure, private :: increase_holding_capacity
@@ -51,10 +51,10 @@ module output_interface
           class(variable_t), intent(in)     :: variable
       end subroutine
 
-      module subroutine write(this, filename)
+      module subroutine save_file(this, filename)
           implicit none
           class(output_t),   intent(inout)     :: this
-          character(len=*), intent(in) :: filename
+          character(len=*),  intent(in) :: filename
       end subroutine
 
   end interface
