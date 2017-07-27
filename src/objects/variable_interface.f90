@@ -10,7 +10,7 @@ module variable_interface
         real, pointer :: local(:,:,:)
 
         character(len=kMAX_NAME_LENGTH) :: name
-        integer                         :: n_attrs
+        integer                         :: n_attrs = 0
         logical                         :: unlimited_dim = .false.
 
         integer                         :: dim_len(4) = 0      ! includes a time/unlimited 4th dim

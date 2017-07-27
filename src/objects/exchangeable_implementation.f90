@@ -106,7 +106,7 @@ contains
     class(exchangeable_t), intent(inout)  :: this
     class(variable_t),     intent(in)     :: metadata
 
-    this%meta_data=metadata
+    this%meta_data = metadata
     this%meta_data%local => this%local
   end subroutine
 
