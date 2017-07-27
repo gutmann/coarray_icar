@@ -1,6 +1,6 @@
 submodule(exchangeable_interface) exchangeable_implementation
   use assertions_interface, only : assert, assertions
-  use grid_interface, only : grid_t
+
   implicit none
 
   integer, parameter :: default_halo_size=1
@@ -10,11 +10,12 @@ submodule(exchangeable_interface) exchangeable_implementation
 
 contains
 
-  module subroutine const(this,grid,initial_value,halo_width)
+  module subroutine const(this,grid,initial_value,halo_width, metadata)
     class(exchangeable_t), intent(inout) :: this
     type(grid_t),          intent(in)    :: grid
     real,                  intent(in)    :: initial_value
     integer,               intent(in), optional :: halo_width
+    class(variable_t),     intent(in), optional :: metadata
 
     integer :: n_neighbors, current
     integer :: ims,ime,kms,kme,jms,jme
@@ -25,7 +26,10 @@ contains
         halo_size = default_halo_size
     end if
 
-    if (allocated(this%local)) deallocate(this%local)
+    if (associated(this%local)) then
+        deallocate(this%local)
+        nullify(this%local)
+    endif
     this%north_boundary = (grid%yimg == grid%yimages)
     this%south_boundary = (grid%yimg == 1)
     this%east_boundary  = (grid%ximg == grid%ximages)
@@ -93,7 +97,19 @@ contains
       end associate
     endif
 
+    if (present(metadata)) call this%set_outputdata(metadata)
+
   end subroutine
+
+  module subroutine set_outputdata(this, metadata)
+    implicit none
+    class(exchangeable_t), intent(inout)  :: this
+    class(variable_t),     intent(in)     :: metadata
+
+    this%meta_data=metadata
+    this%meta_data%local => this%local
+  end subroutine
+
 
   module subroutine send(this)
     class(exchangeable_t), intent(inout) :: this

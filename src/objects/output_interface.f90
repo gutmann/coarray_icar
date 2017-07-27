@@ -10,7 +10,7 @@ module output_interface
   public :: output_t
 
   type output_t
-    !   private
+      private
       logical :: is_initialized = .false.
       logical :: creating = .false.
 

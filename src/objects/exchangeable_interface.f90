@@ -8,8 +8,8 @@ module exchangeable_interface
 
   type :: exchangeable_t
     private
-    real, allocatable, public  :: local(:,:,:)
-    type(variable_t)  :: meta_data
+    real, pointer,    public :: local(:,:,:) => null()
+    type(variable_t), public :: meta_data
     real, allocatable :: halo_south_in(:,:,:)[:]
     real, allocatable :: halo_north_in(:,:,:)[:]
     real, allocatable :: halo_west_in(:,:,:)[:]
@@ -26,6 +26,7 @@ module exchangeable_interface
     procedure, public :: send
     procedure, public :: retrieve
     procedure, public :: exchange
+    procedure, public :: set_outputdata
     generic,   public :: initialize=>const
 
     procedure :: put_north
@@ -42,13 +43,21 @@ module exchangeable_interface
 
   interface
 
-    module subroutine const(this, grid, initial_value, halo_width)
+    module subroutine const(this, grid, initial_value, halo_width, metadata)
       implicit none
       class(exchangeable_t), intent(inout)  :: this
       type(grid_t),          intent(in)     :: grid
       real,                  intent(in)     :: initial_value
       integer,               intent(in), optional :: halo_width
+      class(variable_t),     intent(in), optional :: metadata
     end subroutine
+
+    module subroutine set_outputdata(this, metadata)
+      implicit none
+      class(exchangeable_t), intent(inout)  :: this
+      class(variable_t),     intent(in)     :: metadata
+    end subroutine
+
 
     module subroutine send(this)
       implicit none
