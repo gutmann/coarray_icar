@@ -44,7 +44,7 @@
 !
       MODULE module_mp_thompson
 
-          use co_util, only : co_bcast
+          use co_util, only : co_bcast, co_get_cast
           use timer_interface, only : timer_t
 
 !       USE module_wrf_error
@@ -3655,12 +3655,12 @@
 
       sync all
       if (good.eq.1) then
-          call co_bcast(tcg_racg, 1, 1, num_images())
-          call co_bcast(tmr_racg, 1, 1, num_images())
-          call co_bcast(tcr_gacr, 1, 1, num_images())
-          call co_bcast(tmg_gacr, 1, 1, num_images())
-          call co_bcast(tnr_racg, 1, 1, num_images())
-          call co_bcast(tnr_gacr, 1, 1, num_images())
+          call co_get_cast(tcg_racg, 1, 1, num_images())
+          call co_get_cast(tmr_racg, 1, 1, num_images())
+          call co_get_cast(tcr_gacr, 1, 1, num_images())
+          call co_get_cast(tmg_gacr, 1, 1, num_images())
+          call co_get_cast(tnr_racg, 1, 1, num_images())
+          call co_get_cast(tnr_gacr, 1, 1, num_images())
       endif
 
       IF ( good .NE. 1 ) THEN

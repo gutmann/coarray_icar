@@ -149,7 +149,8 @@ contains
                      "put_north: conformable halo_south_in and local " )
       end if
 
-      this%halo_south_in(1:nx,:,1:halo_size)[north_neighbor] = this%local(:,:,n-halo_size*2+1:n-halo_size)
+      this%halo_north_in(1:nx,:,1:halo_size) = this%local(:,:,n-halo_size*2+1:n-halo_size)
+    !   this%halo_south_in(1:nx,:,1:halo_size)[north_neighbor] = this%local(:,:,n-halo_size*2+1:n-halo_size)
   end subroutine
 
   module subroutine put_south(this)
@@ -165,7 +166,8 @@ contains
                      == shape(this%local(:,:,start:start+halo_size-1)), &
                      "put_south: conformable halo_north_in and local " )
       end if
-      this%halo_north_in(1:nx,:,1:halo_size)[south_neighbor] = this%local(:,:,start+halo_size:start+halo_size*2-1)
+      this%halo_south_in(1:nx,:,1:halo_size) = this%local(:,:,start+halo_size:start+halo_size*2-1)
+    !   this%halo_north_in(1:nx,:,1:halo_size)[south_neighbor] = this%local(:,:,start+halo_size:start+halo_size*2-1)
   end subroutine
 
   module subroutine retrieve_north_halo(this)
@@ -175,7 +177,7 @@ contains
       n = ubound(this%local,3)
       nx = size(this%local,1)
 
-      this%local(:,:,n-halo_size+1:n) = this%halo_north_in(:nx,:,1:halo_size)
+      this%local(:,:,n-halo_size+1:n) = this%halo_south_in(:nx,:,1:halo_size)[north_neighbor]
   end subroutine
 
   module subroutine retrieve_south_halo(this)
@@ -185,7 +187,7 @@ contains
       start = lbound(this%local,3)
       nx = size(this%local,1)
 
-      this%local(:,:,start:start+halo_size-1) = this%halo_south_in(:nx,:,1:halo_size)
+      this%local(:,:,start:start+halo_size-1) = this%halo_north_in(:nx,:,1:halo_size)[south_neighbor]
   end subroutine
 
   module subroutine put_east(this)
@@ -201,7 +203,8 @@ contains
                      "put_east: conformable halo_west_in and local " )
       end if
 
-      this%halo_west_in(1:halo_size,:,1:ny)[east_neighbor] = this%local(n-halo_size*2+1:n-halo_size,:,:)
+      this%halo_east_in(1:halo_size,:,1:ny) = this%local(n-halo_size*2+1:n-halo_size,:,:)
+    !   this%halo_west_in(1:halo_size,:,1:ny)[east_neighbor] = this%local(n-halo_size*2+1:n-halo_size,:,:)
   end subroutine
 
   module subroutine put_west(this)
@@ -218,7 +221,8 @@ contains
                      "put_west: conformable halo_east_in and local " )
       end if
 
-      this%halo_east_in(1:halo_size,:,1:ny)[west_neighbor] = this%local(start+halo_size:start+halo_size*2-1,:,:)
+      this%halo_west_in(1:halo_size,:,1:ny) = this%local(start+halo_size:start+halo_size*2-1,:,:)
+    !   this%halo_east_in(1:halo_size,:,1:ny)[west_neighbor] = this%local(start+halo_size:start+halo_size*2-1,:,:)
   end subroutine
 
   module subroutine retrieve_east_halo(this)
@@ -228,7 +232,7 @@ contains
       n = ubound(this%local,1)
       ny = size(this%local,3)
 
-      this%local(n-halo_size+1:n,:,:) = this%halo_east_in(1:halo_size,:,1:ny)
+      this%local(n-halo_size+1:n,:,:) = this%halo_west_in(1:halo_size,:,1:ny)[east_neighbor]
   end subroutine
 
   module subroutine retrieve_west_halo(this)
@@ -238,7 +242,7 @@ contains
       start = lbound(this%local,1)
       ny = size(this%local,3)
 
-      this%local(start:start+halo_size-1,:,:) = this%halo_west_in(1:halo_size,:,1:ny)
+      this%local(start:start+halo_size-1,:,:) = this%halo_east_in(1:halo_size,:,1:ny)[west_neighbor]
   end subroutine
 
 end submodule
