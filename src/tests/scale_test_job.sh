@@ -22,11 +22,10 @@ cat <<EOF
 #!/usr/bin/env python
 EOF
 
-printf "# "
+printf "#"
 cat input-parameters.txt
 
 cat <<EOF
-#!/usr/bin/env python
 import numpy as np
 import matplotlib.pyplot as plt
 
