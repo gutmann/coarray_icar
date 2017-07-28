@@ -10,7 +10,7 @@ contains
     !! Sets the internal start_time and marks the timer as running
     !!
     !------------------------------------
-    subroutine start(this)
+    module subroutine start(this)
         class(timer_t), intent(inout) :: this
 
         this%is_running = .True.

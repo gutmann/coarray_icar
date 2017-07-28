@@ -9,6 +9,13 @@ ifeq ($(USE_ASSERTIONS),)
   USE_ASSERTIONS:=.false.
 endif
 
+ifndef NETCDF
+	NETCDF=/usr/local
+endif
+NCDF_PATH = ${NETCDF}
+LIBNETCDF = -L$(NCDF_PATH)/lib -lnetcdff -lnetcdf
+INCNETCDF = -I$(NCDF_PATH)/include
+
 BUILD=../build
 objects_dir=../objects
 utilities=../utilities
@@ -17,41 +24,53 @@ tests_dir=.
 
 coarray_icar_root := ../..
 root := $(HOME)
+
 lib_dirs := -L $(root)/lib
-mod_dirs := -I $(root)/mod
+inc_dirs := -I $(root)/inc
 install_dir := $(root)/bin
 
 
-executable := test-ideal test-initialization test-timer
-# Options: gnu, intel
-compiler := cray
+# Options: cray, gnu, intel
+ifndef COMPILER
+	COMPILER := cray
+endif
 
 # Specify the compiler invocation name and flags
-ifeq ($(compiler),gnu)
+ifeq ($(COMPILER),gnu)
   compile := caf
+  link := $(compile)
   opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
   link_flags := -fcheck=all -Wall -fbacktrace -g
-  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
-  link_flags := -Ofast
-  lib :=
-else
-  ifeq ($(compiler),intel)
-    compile := mpif90
-    # opt := -standard-semantics -coarray=shared -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
-	opt := -standard-semantics -coarray -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
-    link_flags := -standard-semantics -coarray -check all -traceback -g
-    lib :=
-  else
-    ifeq ($(compiler),cray)
-      compile := ftn
-      link_flags :=
-      opt := -e T -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
-      lib :=
-    endif
+  ifeq ($(MODE),fast)
+	  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
+	  link_flags := -Ofast
   endif
 endif
-link := $(compile)
 
+ifeq ($(COMPILER),intel)
+	compile := mpif90
+	link := $(compile)
+	opt := -standard-semantics -coarray -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+	link_flags := -standard-semantics -coarray -check all -traceback -g
+
+	ifeq ($(MODE),fast)
+		opt := -O3 -xHost -coarray -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+	    link_flags := -O3 -xHost -coarray
+	endif
+endif
+
+ifeq ($(COMPILER),cray)
+      compile := ftn
+	  link := $(compile)
+      link_flags :=
+      opt := -e T -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+endif
+
+
+comp_flags := $(opt) $(inc_dirs)
+link_flags := $(link_flags) $(lib_dirs)
+
+executable := test-ideal test-initialization test-timer
 
 # Locate required source files
 # objects_source := $(shell ls $(objects_dir)/*.f90)
@@ -59,6 +78,10 @@ link := $(compile)
 #
 # # Swap .f90 file extensions for .o extensions
 # object_files := $(subst .f90,.o,$(build_source_files))
+
+all: test-ideal
+
+tests: test-ideal test-initialization test-timer
 
 # Executable depends on object files
 test-ideal: \
@@ -117,7 +140,7 @@ $(BUILD)/test-initialization.o: test-initialization.f90 		\
 								$(BUILD)/mp_driver.o			\
 								$(BUILD)/grid_interface.o		\
 								$(BUILD)/timer_interface.o
-	$(compile) $(opt) -c $< -o $@
+	$(compile) $(comp_flags) -c $< -o $@
 
 # $(BUILD)/test-bcast.o:  test-bcast.f90		\
 # 						$(BUILD)/co_utilities.o
@@ -128,10 +151,10 @@ $(BUILD)/test-ideal.o: 	test-ideal.f90					\
 						$(BUILD)/mp_driver.o			\
 						$(BUILD)/grid_interface.o		\
 						$(BUILD)/timer_interface.o
-	$(compile) $(opt) -c $< -o $@
+	$(compile) $(comp_flags) -c $< -o $@
 
 $(BUILD)/test-timer.o: test-timer.f90 $(BUILD)/timer_interface.o
-	$(compile) $(opt) -c $< -o $@
+	$(compile) $(comp_flags) -c $< -o $@
 
 
 $(BUILD)/mp_thompson.o: 				$(BUILD)/timer_interface.o			\
@@ -170,26 +193,26 @@ $(info $$physics      = ${physics})
 
 # Prefer files in the present working directory (picks the local main over another main)
 # %.o: %.f90
-# 	$(compile) $(opt) -c $< -o $@
+# 	$(compile) $(comp_flags) -c $< -o $@
 
 
 
 %.o: $(tests_dir)/%.f90
-	$(compile) $(opt) -c $< -o $@
+	$(compile) $(comp_flags) -c $< -o $@
 
 # Compile dependencies from utilities directory
 %.o: $(utilities)/%.f90
-	$(compile) $(opt) -c $< -o $@
+	$(compile) $(comp_flags) -c $< -o $@
 
 # Compile dependencies from physics directory
 %.o: $(physics)/%.f90
-	$(compile) $(opt) -c $< -o $@
+	$(compile) $(comp_flags) -c $< -o $@
 
 # Compile dependencies from objects
 %.o: $(objects_dir)/%.f90
-	$(compile) $(opt) -c $< -o $@
+	$(compile) $(comp_flags) -c $< -o $@
 
-.PHONY : clean uninstall
+.PHONY : clean uninstall install tests all
 
 clean :
 	-rm -f  $(BUILD)/*.o $(BUILD)/*.mod $(BUILD)/*.smod $(executable)

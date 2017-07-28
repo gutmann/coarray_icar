@@ -97,8 +97,8 @@ contains
       this%jde = this%ny_global
       this%kde = this%nz
 
-      allocate(this%transfer_array_2d(this%nx, this%ny_global)[*])
-      allocate(this%transfer_array_3d(this%nx, this%nz, this%ny_global)[*])
+    !   allocate(this%transfer_array_2d(this%nx, this%ny_global)[*])
+    !   allocate(this%transfer_array_3d(this%nx, this%nz, this%ny_global)[*])
 
       associate(                                    &
           surface_z            => 0.0,              &   ! elevation of the first model level [m]
@@ -404,8 +404,8 @@ contains
       grid%jme        = grid%jms + this%ny + ny_e - 1
       grid%kms        = 1
       grid%kme        = this%nz
-      grid%ns_halo_nx = this%nx + 1
-      grid%ew_halo_ny = this%ny + 1
+      grid%ns_halo_nx = this%nx_global / this%ximages + 1 + nx_e
+      grid%ew_halo_ny = this%ny_global / this%yimages + 1 + ny_e
       grid%halo_nz    = this%nz
 
     end function
