@@ -20,12 +20,8 @@ function run_test(){
 
 cat <<EOF
 #!/usr/bin/env python
-EOF
+# `cat input-parameters.txt`
 
-printf "#"
-cat input-parameters.txt
-
-cat <<EOF
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -43,6 +39,7 @@ plt.xlabel("Number of Processors")
 plt.ylabel("Speedup")
 plt.legend( )
 plt.tight_layout( )
+plt.title("`cat input-parameters.txt`")
 plt.savefig("speedup.png")
 
 plt.clf( )
@@ -50,7 +47,7 @@ plt.plot(d[:,0], d[:,1], "x",color="C0", label="CAF")
 plt.xlabel("Number of Processors")
 plt.ylabel("Run time (s)")
 plt.legend( )
-plt.tight_layout( )
+plt.title("`cat input-parameters.txt`")
 plt.savefig("runtime.png")
 EOF
 
