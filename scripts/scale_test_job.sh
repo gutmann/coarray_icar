@@ -7,16 +7,23 @@
 #PBS -l select=50:ncpus=36:mpiprocs=36
 
 function run_test(){
-    EXE=test-ideal
+    EXE=./test-ideal
 
     # for (( i=1440; i>360; i-=18 )); do
-    for (( i=1800; i>36; i-=36 )); do
+    for (( i=64; i>1; i-=2 )); do
         echo -n "[" $i ","
         cafrun -np $i ${EXE} | grep "Model run time" | sed  -e's/Model run time:/ /;s/$/],/;s/seconds//'
     done
-    echo -n "[ 36, "
-    cafrun -np 36 ${EXE} | grep "Model run time" | sed  -e's/Model run time:/ /;s/$/]/;s/seconds//'
+    echo -n "[ 1, "
+    cafrun -np 1 ${EXE} | grep "Model run time" | sed  -e's/Model run time:/ /;s/$/]/;s/seconds//'
 }
+
+cat <<EOF
+#!/usr/bin/env python
+EOF
+
+printf "# "
+cat input-parameters.txt
 
 cat <<EOF
 #!/usr/bin/env python
