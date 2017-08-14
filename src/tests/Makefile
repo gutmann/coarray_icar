@@ -25,8 +25,8 @@ tests_dir=.
 coarray_icar_root := ../..
 root := $(HOME)
 
-lib_dirs := -L $(root)/lib
-inc_dirs := -I $(root)/inc
+lib_dirs := #-L $(root)/lib
+inc_dirs := #-I $(root)/inc
 install_dir := $(root)/bin
 
 
@@ -46,6 +46,19 @@ ifeq ($(COMPILER),gnu)
 	  link_flags := -Ofast
   endif
 endif
+
+ifeq ($(COMPILER),oshfort)
+  compile := oshfort
+  link := $(compile)
+  OSH_FLAGS := -fcoarray=lib -L/glade/u/home/elfanfa/Cheyenne/opencoarrays_openshmem/src/openshmem -lcaf_openshmem
+  opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/ $(OSH_FLAGS)
+  link_flags := -fcheck=all -Wall -fbacktrace -g $(OSH_FLAGS)
+  ifeq ($(MODE),fast)
+	  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/ $(OSH_FLAGS)
+	  link_flags := -Ofast $(OSH_FLAGS)
+  endif
+endif
+
 
 ifeq ($(COMPILER),intel)
 	compile := mpif90
