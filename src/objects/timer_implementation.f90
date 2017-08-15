@@ -22,7 +22,7 @@ contains
         if (cpu_only) then
             call cpu_time(this%start_time)
         else
-            call system_clock(this%counter, this%COUNT_RATE, this%COUNT_MAX)
+            call system_clock(this%counter, this%count_rate, this%count_max)
         endif
     end subroutine start
 
@@ -43,7 +43,11 @@ contains
             call cpu_time(this%end_time)
         else
             call system_clock(count_end)
-            this%end_time = (count_end - this%counter) / real(this%count_rate)
+            if (count_end<this%counter) then
+                this%end_time = (count_end + (this%count_max - this%counter)) / real(this%count_rate)
+            else
+                this%end_time = (count_end - this%counter) / real(this%count_rate)
+            endif
         endif
 
         if (this%is_running) then
@@ -86,7 +90,11 @@ contains
                 call cpu_time(current_time)
             else
                 call system_clock(count_end)
-                current_time = (count_end - this%counter) / real(this%count_rate)
+                if (count_end<this%counter) then
+                    current_time = (count_end + (this%count_max - this%counter)) / real(this%count_rate)
+                else
+                    current_time = (count_end - this%counter) / real(this%count_rate)
+                endif
             endif
             time = this%total_time + (current_time - this%start_time)
         else
@@ -116,7 +124,11 @@ contains
                 call cpu_time(current_time)
             else
                 call system_clock(count_end)
-                current_time = (count_end - this%counter) / real(this%count_rate)
+                if (count_end<this%counter) then
+                    current_time = (count_end + (this%count_max - this%counter)) / real(this%count_rate)
+                else
+                    current_time = (count_end - this%counter) / real(this%count_rate)
+                endif
             endif
             temporary_time = this%total_time + (current_time - this%start_time)
         else
