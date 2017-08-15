@@ -43,7 +43,7 @@ contains
             call cpu_time(this%end_time)
         else
             call system_clock(count_end)
-            this%end_time = (count_end - this%counter) / this%count_rate
+            this%end_time = (count_end - this%counter) / real(this%count_rate)
         endif
 
         if (this%is_running) then
@@ -86,7 +86,7 @@ contains
                 call cpu_time(current_time)
             else
                 call system_clock(count_end)
-                current_time = (count_end - this%counter) / this%count_rate
+                current_time = (count_end - this%counter) / real(this%count_rate)
             endif
             time = this%total_time + (current_time - this%start_time)
         else
@@ -116,7 +116,7 @@ contains
                 call cpu_time(current_time)
             else
                 call system_clock(count_end)
-                current_time = (count_end - this%counter) / this%count_rate
+                current_time = (count_end - this%counter) / real(this%count_rate)
             endif
             temporary_time = this%total_time + (current_time - this%start_time)
         else
