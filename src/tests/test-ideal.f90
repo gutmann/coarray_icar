@@ -55,7 +55,7 @@ program main
     call timer%stop()
 
     if (this_image()==1) then
-        print *,"Model run time:",timer%as_string('(f6.1," seconds")')
+        print *,"Model run time:",timer%as_string('(f8.3," seconds")')
     endif
   end block
 
