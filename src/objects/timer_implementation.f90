@@ -10,11 +10,20 @@ contains
     !! Sets the internal start_time and marks the timer as running
     !!
     !------------------------------------
-    module subroutine start(this)
+    module subroutine start(this, use_cpu_time)
         class(timer_t), intent(inout) :: this
+        logical,        intent(in),   optional :: use_cpu_time
+
+        logical :: cpu_only
+        cpu_only = merge(use_cpu_time, .false., present(use_cpu_time))
 
         this%is_running = .True.
-        call cpu_time(this%start_time)
+        this%use_cpu_time = cpu_only
+        if (cpu_only) then
+            call cpu_time(this%start_time)
+        else
+            call system_clock(this%counter, this%COUNT_RATE, this%COUNT_MAX)
+        endif
     end subroutine start
 
     !>-----------------------------------
@@ -27,9 +36,15 @@ contains
     !------------------------------------
     module subroutine stop(this)
         class(timer_t), intent(inout) :: this
+        integer :: count_end
 
         ! do this before we even test anything else because we want the timer to "stop" as soon as possible
-        call cpu_time(this%end_time)
+        if (this%use_cpu_time) then
+            call cpu_time(this%end_time)
+        else
+            call system_clock(count_end)
+            this%end_time = (count_end - this%counter) / this%count_rate
+        endif
 
         if (this%is_running) then
             this%is_running = .False.
@@ -64,9 +79,15 @@ contains
         real :: time ! return value
 
         real :: current_time
+        integer :: count_end
 
         if (this%is_running) then
-            call cpu_time(current_time)
+            if (this%use_cpu_time) then
+                call cpu_time(current_time)
+            else
+                call system_clock(count_end)
+                current_time = (count_end - this%counter) / this%count_rate
+            endif
             time = this%total_time + (current_time - this%start_time)
         else
             time = this%total_time
@@ -88,9 +109,15 @@ contains
         character(len=25) :: time ! return value
 
         real :: temporary_time, current_time
+        integer :: count_end
 
         if (this%is_running) then
-            call cpu_time(current_time)
+            if (this%use_cpu_time) then
+                call cpu_time(current_time)
+            else
+                call system_clock(count_end)
+                current_time = (count_end - this%counter) / this%count_rate
+            endif
             temporary_time = this%total_time + (current_time - this%start_time)
         else
             temporary_time = this%total_time
