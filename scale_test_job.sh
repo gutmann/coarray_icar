@@ -7,19 +7,21 @@
 #PBS -l select=50:ncpus=36:mpiprocs=36
 
 function run_test(){
-    EXE=test-ideal
+    EXE=./test-ideal
 
     # for (( i=1440; i>360; i-=18 )); do
-    for (( i=1800; i>36; i-=36 )); do
+    for (( i=64; i>1; i-=2 )); do
         echo -n "[" $i ","
         cafrun -np $i ${EXE} | grep "Model run time" | sed  -e's/Model run time:/ /;s/$/],/;s/seconds//'
     done
-    echo -n "[ 36, "
-    cafrun -np 36 ${EXE} | grep "Model run time" | sed  -e's/Model run time:/ /;s/$/]/;s/seconds//'
+    echo -n "[ 1, "
+    cafrun -np 1 ${EXE} | grep "Model run time" | sed  -e's/Model run time:/ /;s/$/]/;s/seconds//'
 }
 
 cat <<EOF
 #!/usr/bin/env python
+# `cat input-parameters.txt`
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -37,6 +39,7 @@ plt.xlabel("Number of Processors")
 plt.ylabel("Speedup")
 plt.legend( )
 plt.tight_layout( )
+plt.title("`cat input-parameters.txt`")
 plt.savefig("speedup.png")
 
 plt.clf( )
@@ -44,7 +47,7 @@ plt.plot(d[:,0], d[:,1], "x",color="C0", label="CAF")
 plt.xlabel("Number of Processors")
 plt.ylabel("Run time (s)")
 plt.legend( )
-plt.tight_layout( )
+plt.title("`cat input-parameters.txt`")
 plt.savefig("runtime.png")
 EOF
 
