@@ -11,7 +11,7 @@ program main
 
   block
     type(domain_t), save :: domain
-    integer :: i,nz, ypos
+    integer :: i,nz, ypos,xpos
     type(timer_t) :: timer
 
     if (this_image()==1) print *,this_image(),"domain%initialize_from_file('input-parameters.txt')"
@@ -57,8 +57,21 @@ program main
     if (this_image()==1) then
         print *,"Model run time:",timer%as_string('(f8.3," seconds")')
     endif
+
+    ypos = (domain%jde-domain%jds)/2 + domain%jds
+    do i=1,num_images()
+        sync all
+        if (this_image()==i) then
+            if ((ypos>=domain%jts).and.(ypos<=domain%jte)) then
+                xpos = (domain%ite-domain%its)/2 + domain%its
+                print*, this_image(), " : ", domain%accumulated_precipitation(domain%its:domain%ite:2,ypos)
+            endif
+        endif
+    enddo
+
   end block
 
- if (this_image()==1) print *,"Test passed."
+
+  if (this_image()==1) print *,"Test passed."
 
 end program
