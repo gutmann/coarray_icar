@@ -244,11 +244,16 @@ contains
     !! return the split that provides the closest match between the number of x and y grid cells
     !!
     !! -------------------------------
-    module subroutine domain_decomposition(this, nx, ny, nimages)
+    module subroutine domain_decomposition(this, nx, ny, nimages, ratio)
         class(domain_t), intent(inout) :: this
         integer,         intent(in)    :: nx, ny, nimages
+        real,            intent(in), optional :: ratio
+        real :: multiplier
         integer :: ysplit, xsplit, xs, ys, i
         real :: best, current, x, y
+
+        multiplier=1
+        if (present(ratio)) multiplier = ratio
 
         xsplit = 1
         ysplit = nimages
@@ -258,10 +263,10 @@ contains
         x = (nx/real(xsplit))
         y = (ny/real(ysplit))
 
-        if (y > x) then
-            best = abs(1 - ( y / x ))
+        if (y > (multiplier*x)) then
+            best = abs(1 - ( y / (multiplier*x) ))
         else
-            best = abs(1 - ( x / y ))
+            best = abs(1 - ( (multiplier*x) / y ))
         endif
 
         do i=nimages,1,-1
@@ -272,10 +277,10 @@ contains
                 x = (nx/float(xsplit))
                 y = (ny/float(ysplit))
 
-                if (y > x) then
-                    current = abs(1 - ( y / x ))
+                if (y > (multiplier*x)) then
+                    current = abs(1 - ( y / (multiplier*x) ))
                 else
-                    current = abs(1 - ( x / y ))
+                    current = abs(1 - ( (multiplier*x) / y ))
                 endif
 
                 if (current < best) then
@@ -296,6 +301,7 @@ contains
         y = (ny/float(ys))
 
         if (assertions) call assert((xs*ys) == nimages, "Number of tiles does not sum to number of images")
+        if (this_image()==1) print*, "ximgs=",xs, "yimgs=",ys
 
     end subroutine domain_decomposition
 
@@ -307,17 +313,27 @@ contains
       class(domain_t), intent(inout) :: this
       character(len=*), intent(in) :: file_name
       integer :: nx,ny,nz
+      real    :: preferred_ratio
       integer :: my_unit,stat
       character(len=64) error_message
       namelist/grid/ nx,ny,nz
+      namelist/options/ preferred_ratio
 
       open(file=file_name,newunit=my_unit,iostat=stat,status='old',action='read')
       write(error_message,*) "image ",this_image()," could not open file " // trim(file_name)
       if (assertions) call assert(stat==0,error_message)
+      if (stat/=0) print*, error_message
 
       read(unit=my_unit,nml=grid,iostat=stat)
       write(error_message,*)"image ",this_image()," could not read file " // trim(file_name)
       if (assertions) call assert(stat==0,error_message)
+      if (stat/=0) print*, error_message
+
+      preferred_ratio = 1
+      read(unit=my_unit,nml=options,iostat=stat)
+      write(error_message,*)"image ",this_image()," could not read file " // trim(file_name)
+      if (assertions) call assert(stat==0,error_message)
+      if (stat/=0) print*, error_message
 
       close(my_unit,iostat=stat)
       write(error_message,*)"image ",this_image()," could not close file " // trim(file_name)
@@ -325,7 +341,7 @@ contains
 
       this%nx_global = nx
       this%ny_global = ny
-      call this%domain_decomposition(nx, ny, num_images())
+      call this%domain_decomposition(nx, ny, num_images(), preferred_ratio)
       this%nx = my_n(nx, this%ximg, this%ximages)
       this%ny = my_n(ny, this%yimg, this%yimages)
       this%nz = nz
