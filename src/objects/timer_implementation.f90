@@ -15,7 +15,11 @@ contains
         logical,        intent(in),   optional :: use_cpu_time
 
         logical :: cpu_only
-        cpu_only = merge(use_cpu_time, .false., present(use_cpu_time))
+        if (present(use_cpu_time)) then
+          cpu_only = use_cpu_time
+        else
+          cpu_only = .false.
+        end if
 
         this%is_running = .True.
         this%use_cpu_time = cpu_only
