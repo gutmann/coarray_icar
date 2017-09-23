@@ -49,15 +49,28 @@ ifeq ($(COMPILER),gnu)
   endif
 endif
 
+ifeq ($(COMPILER),oshfort)
+  compile := oshfort
+  link := $(compile)
+  OSH_FLAGS := -fcoarray=lib -L/glade/u/home/elfanfa/Cheyenne/opencoarrays_openshmem/src/openshmem -lcaf_openshmem
+  opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/ $(OSH_FLAGS)
+  link_flags := -fcheck=all -Wall -fbacktrace -g $(OSH_FLAGS)
+  ifeq ($(MODE),fast)
+	  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/ $(OSH_FLAGS)
+	  link_flags := -Ofast $(OSH_FLAGS)
+  endif
+endif
+
+
 ifeq ($(COMPILER),intel)
 	compile := mpif90
 	link := $(compile)
-	opt := -standard-semantics -coarray -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
-	link_flags := -standard-semantics -coarray -check all -traceback -g
+	opt := -standard-semantics -coarray=distributed -coarray-config-file=./caf_config -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+	link_flags := -standard-semantics -coarray=distributed -check all -traceback -g -coarray-config-file=./caf_config
 
 	ifeq ($(MODE),fast)
-		opt := -O3 -xHost -coarray -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
-	    link_flags := -O3 -xHost -coarray
+		opt := -O3 -xHost -coarray=distributed -coarray-config-file=./caf_config -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+	    link_flags := -O3 -xHost -coarray=distributed -coarray-config-file=./caf_config
 	endif
 endif
 

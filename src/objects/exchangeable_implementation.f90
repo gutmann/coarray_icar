@@ -170,6 +170,7 @@ contains
                      "put_north: conformable halo_south_in and local " )
       end if
 
+      !dir$ pgas defer_sync
       this%halo_south_in(1:nx,:,1:halo_size)[north_neighbor] = this%local(:,:,n-halo_size*2+1:n-halo_size)
   end subroutine
 
@@ -186,6 +187,7 @@ contains
                      == shape(this%local(:,:,start:start+halo_size-1)), &
                      "put_south: conformable halo_north_in and local " )
       end if
+      !dir$ pgas defer_sync
       this%halo_north_in(1:nx,:,1:halo_size)[south_neighbor] = this%local(:,:,start+halo_size:start+halo_size*2-1)
   end subroutine
 
@@ -222,6 +224,7 @@ contains
                      "put_east: conformable halo_west_in and local " )
       end if
 
+      !dir$ pgas defer_sync
       this%halo_west_in(1:halo_size,:,1:ny)[east_neighbor] = this%local(n-halo_size*2+1:n-halo_size,:,:)
   end subroutine
 
@@ -239,6 +242,7 @@ contains
                      "put_west: conformable halo_east_in and local " )
       end if
 
+      !dir$ pgas defer_sync
       this%halo_east_in(1:halo_size,:,1:ny)[west_neighbor] = this%local(start+halo_size:start+halo_size*2-1,:,:)
   end subroutine
 

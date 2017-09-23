@@ -1,1 +1,3 @@
-&grid nx=1200,ny=1720,nz=40 /
+&grid nx=100,ny=100,nz=20 /
+
+&options preferred_ratio=0.5/
