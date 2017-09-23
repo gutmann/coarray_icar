@@ -39,11 +39,12 @@ endif
 ifeq ($(COMPILER),gnu)
   compile := caf
   link := $(compile)
-  opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
-  link_flags := -fcheck=all -Wall -fbacktrace -g
+  parallel := -fopenmp -lgomp
+  opt := $(parallel) -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
+  link_flags := $(parallel) -fcheck=all -Wall -fbacktrace -g
   ifeq ($(MODE),fast)
-	  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
-	  link_flags := -Ofast
+	  opt := $(parallel) -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
+	  link_flags := $(parallel) -Ofast
   endif
 endif
 
@@ -63,12 +64,13 @@ endif
 ifeq ($(COMPILER),intel)
 	compile := mpif90
 	link := $(compile)
-	opt := -standard-semantics -coarray=distributed -coarray-config-file=./caf_config -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
-	link_flags := -standard-semantics -coarray=distributed -check all -traceback -g -coarray-config-file=./caf_config
+	parallel := -qopenmp -liomp5
+	opt := ${parallel} -standard-semantics -coarray=distributed -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+	link_flags := ${parallel} -standard-semantics -coarray=distributed -check all -traceback -g
 
 	ifeq ($(MODE),fast)
-		opt := -O3 -xHost -coarray=distributed -coarray-config-file=./caf_config -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
-	    link_flags := -O3 -xHost -coarray=distributed -coarray-config-file=./caf_config
+		opt := ${parallel} -O3 -xHost -coarray=distributed -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+	    link_flags := ${parallel} -O3 -xHost -coarray=distributed
 	endif
 endif
 
