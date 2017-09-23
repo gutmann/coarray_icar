@@ -79,6 +79,7 @@ ifeq ($(COMPILER),cray)
 	  link := $(compile)
       link_flags :=
       opt := -e T -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+	  # note to disable openmp on cray add -h noomp
 endif
 
 
