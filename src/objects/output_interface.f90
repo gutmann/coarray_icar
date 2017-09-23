@@ -15,7 +15,7 @@ module output_interface
       logical :: creating = .false.
 
       integer :: n_variables = 0
-      type(variable_t), allocatable :: variables(:)
+      class(variable_t), allocatable :: variables(:)
 
       character(len=kMAX_FILE_LENGTH) :: filename
       integer :: ncfile_id

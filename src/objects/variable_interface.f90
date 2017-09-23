@@ -7,7 +7,7 @@ module variable_interface
     ! have to think about how to handle multiple variable types (int, 2d, etc)
     ! could add multiple "local" variables or create multiple variable types...
     type variable_t
-        real, pointer :: local(:,:,:) => null()
+        ! real, pointer :: local(:,:,:) => null()
 
         character(len=kMAX_NAME_LENGTH) :: name
         integer                         :: n_attrs = 0
@@ -37,6 +37,12 @@ module variable_interface
 
     end type variable_t
 
+    type, extends(variable_t) :: var2d_t
+        real, pointer :: local(:,:) => null()
+    end type
+    type, extends(variable_t) :: var3d_t
+        real, pointer :: local(:,:,:) => null()
+    end type
     ! interface
     !     module subroutine add_attribute(this, attr_name, attr_value)
     !         implicit none

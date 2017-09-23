@@ -1,5 +1,7 @@
 submodule(output_interface) output_implementation
+  use variable_interface, only : var3d_t, var2d_t
   implicit none
+
 
 contains
 
@@ -71,18 +73,22 @@ contains
         integer :: i
 
         do i=1,this%n_variables
-            associate(var => this%variables(i) )
+            select type(var => this%variables(i))
+            class is (var3d_t)
                 call check( nf90_put_var(this%ncfile_id, var%var_id,  var%local),   &
                             "saving:"//trim(var%name) )
-            end associate
+            class is (var2d_t)
+                call check( nf90_put_var(this%ncfile_id, var%var_id,  var%local),   &
+                            "saving:"//trim(var%name) )
+            end select
         end do
 
     end subroutine save_data
 
     subroutine setup_dims_for_var(this, var)
         implicit none
-        class(output_t), intent(inout) :: this
-        class(variable_t), intent(inout) :: var
+        class(output_t),    intent(inout) :: this
+        class(variable_t),  intent(inout) :: var
         integer :: i, err
 
         do i = 1, size(var%dim_ids)
@@ -154,11 +160,11 @@ contains
         implicit none
         class(output_t),   intent(inout)  :: this
 
-        type(variable_t), allocatable :: new_variables(:)
+        class(variable_t), allocatable :: new_variables(:)
 
-        allocate(new_variables(size(this%variables)))
+        allocate(new_variables, source=this%variables)
 
-        new_variables = this%variables
+        ! new_variables = this%variables
 
         deallocate(this%variables)
 
