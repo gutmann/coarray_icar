@@ -61,7 +61,7 @@ endif
 
 
 ifeq ($(COMPILER),intel)
-	compile := mpif90
+	compile := mpiifort
 	link := $(compile)
 	opt := -standard-semantics -coarray -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
 	link_flags := -standard-semantics -coarray -check all -traceback -g
