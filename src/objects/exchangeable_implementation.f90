@@ -107,8 +107,11 @@ contains
     class(variable_t),     intent(in)     :: metadata
 
     this%meta_data = metadata
-    this%meta_data%local => this%local
 
+    this%meta_data%data_3d => this%local
+    this%meta_data%three_d = .True.
+
+    if (.not.allocated(this%meta_data%dim_len)) allocate(this%meta_data%dim_len(3))
     this%meta_data%dim_len(1) = size(this%local,1)
     this%meta_data%dim_len(2) = size(this%local,2)
     this%meta_data%dim_len(3) = size(this%local,3)

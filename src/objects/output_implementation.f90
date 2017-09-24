@@ -1,13 +1,21 @@
 submodule(output_interface) output_implementation
-  use variable_interface, only : var3d_t, var2d_t
   implicit none
 
 
 contains
 
+    module subroutine set_domain(this, domain)
+        class(output_t),  intent(inout)  :: this
+        type(domain_t),   intent(in)     :: domain
+
+        if (.not.this%is_initialized) call this%init()
+
+    end subroutine
+
+
     module subroutine add_to_output(this, variable)
         class(output_t),   intent(inout)  :: this
-        class(variable_t), intent(in)     :: variable
+        type(variable_t),  intent(in)     :: variable
 
         if (.not.this%is_initialized) call this%init()
 
@@ -37,6 +45,15 @@ contains
         ! define variables or find variable IDs (and dimensions)
         call setup_variables(this)
 
+        ! add global attributes such as the image number
+        call add_global_attributes(this)
+
+        if (this%creating) then
+            ! End define mode. This tells netCDF we are done defining metadata.
+            call check( nf90_enddef(this%ncfile_id), "end define mode" )
+            this%creating=.false.
+        endif
+
         ! store output
         call save_data(this)
 
@@ -44,6 +61,23 @@ contains
         call check(nf90_close(this%ncfile_id), "Closing file "//trim(filename))
     end subroutine
 
+    subroutine add_global_attributes(this)
+        implicit none
+        class(output_t), intent(inout)  :: this
+        integer :: i
+
+        if (this%n_attrs > 0) then
+            do i=1,this%n_attrs
+                call check( nf90_put_att(   this%ncfile_id,             &
+                                            NF90_GLOBAL,                &
+                                            this%attribute_names(i),    &
+                                            this%attribute_values(i)))
+            enddo
+        endif
+
+        call check(nf90_put_att(this%ncfile_id, NF90_GLOBAL, "image", this_image()))
+
+    end subroutine add_global_attributes
 
     subroutine setup_variables(this)
         implicit none
@@ -58,12 +92,6 @@ contains
             call setup_variable(this, this%variables(i))
         end do
 
-        if (this%creating) then
-            ! End define mode. This tells netCDF we are done defining metadata.
-            call check( nf90_enddef(this%ncfile_id), "end define mode" )
-            this%creating=.false.
-        endif
-
     end subroutine setup_variables
 
 
@@ -73,14 +101,15 @@ contains
         integer :: i
 
         do i=1,this%n_variables
-            select type(var => this%variables(i))
-            class is (var3d_t)
-                call check( nf90_put_var(this%ncfile_id, var%var_id,  var%local),   &
-                            "saving:"//trim(var%name) )
-            class is (var2d_t)
-                call check( nf90_put_var(this%ncfile_id, var%var_id,  var%local),   &
-                            "saving:"//trim(var%name) )
-            end select
+            associate(var => this%variables(i))
+                if (var%three_d) then
+                    call check( nf90_put_var(this%ncfile_id, var%var_id,  var%data_3d),   &
+                                "saving:"//trim(var%name) )
+                elseif (var%two_d) then
+                    call check( nf90_put_var(this%ncfile_id, var%var_id,  var%data_2d),   &
+                                "saving:"//trim(var%name) )
+                endif
+            end associate
         end do
 
     end subroutine save_data
@@ -90,6 +119,14 @@ contains
         class(output_t),    intent(inout) :: this
         class(variable_t),  intent(inout) :: var
         integer :: i, err
+
+        if (allocated(var%dim_ids)) deallocate(var%dim_ids)
+
+        if (var%three_d) then
+            allocate(var%dim_ids(3))
+        elseif (var%two_d) then
+            allocate(var%dim_ids(2))
+        endif
 
         do i = 1, size(var%dim_ids)
 
@@ -159,11 +196,10 @@ contains
     module subroutine increase_holding_capacity(this)
         implicit none
         class(output_t),   intent(inout)  :: this
-
         class(variable_t), allocatable :: new_variables(:)
 
+        ! assert allocated(this%variables)
         allocate(new_variables, source=this%variables)
-
         ! new_variables = this%variables
 
         deallocate(this%variables)

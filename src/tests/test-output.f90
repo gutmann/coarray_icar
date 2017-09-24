@@ -34,6 +34,7 @@ program test_output
     type(output_t) :: dataset
     type(variable_t) :: vars(4)
 
+    character(len=128) :: output_file
     real, allocatable, target :: local(:,:,:)
 
     allocate(local(20,2,30))
@@ -46,7 +47,8 @@ program test_output
     call dataset%add_to_output(vars(2))
     call dataset%add_to_output(vars(4))
 
-    call dataset%write("test.nc")
+    write(output_file,"(A,I0.3,A)") "test_", this_image(),".nc"
+    call dataset%save_file(output_file)
 
 contains
     subroutine setup(var, name, input_data)
@@ -61,7 +63,8 @@ contains
         var%dimensions=[character(len=1024) :: "x", "y", "z",""]
         var%attribute_names=["a","b","c"]
         var%attribute_values=["a1","b1","c1"]
-        var%local => input_data
+        var%data_3d => input_data
+        var%three_d = .True.
 
     end subroutine setup
 

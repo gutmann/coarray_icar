@@ -4,7 +4,6 @@ program main
   use assertions_interface, only : assert
   use module_mp_driver,     only : microphysics
   use timer_interface,      only : timer_t
-  use output_interface,     only : output_t
   implicit none
 
   if (this_image()==1) print *,"Number of images = ",num_images()
@@ -12,7 +11,6 @@ program main
   block
     type(domain_t)  :: domain
     type(timer_t)   :: timer
-    type(output_t)  :: dataset
     integer :: i,nz, ypos,xpos
 
     if (this_image()==1) print *,this_image(),"domain%initialize_from_file('input-parameters.txt')"
@@ -54,12 +52,6 @@ program main
     end do
     sync all
     call timer%stop()
-
-    call dataset%add_to_output(domain%water_vapor)
-    call dataset%add_to_output(vars(4))
-
-    call dataset%write("test.nc")
-
 
     if (this_image()==1) then
         print *,"Model run time:",timer%as_string('(f8.3," seconds")')

@@ -171,11 +171,15 @@ test-timer: \
 	$(link) $^ -o $@ $(link_flags)
 
 test-output: \
-			$(BUILD)/test-output.o			\
-			$(BUILD)/constants.o			\
-			$(BUILD)/variable_interface.o	\
-			$(BUILD)/output_interface.o		\
-			$(BUILD)/output_implementation.o
+			$(BUILD)/test-output.o				\
+			$(BUILD)/constants.o				\
+			$(BUILD)/variable_interface.o		\
+			$(BUILD)/output_interface.o			\
+			$(BUILD)/output_implementation.o	\
+			$(BUILD)/domain_interface.o			\
+			$(BUILD)/domain_implementation.o	\
+			$(BUILD)/exchangeable_interface.o	\
+			$(BUILD)/exchangeable_implementation.o
 	$(link) $^ -o $@ $(link_flags)
 
 install: $(executable)
@@ -238,6 +242,7 @@ $(BUILD)/variable_implementation.o: 	$(BUILD)/variable_interface.o
 $(BUILD)/output_implementation.o: 		$(BUILD)/output_interface.o
 
 $(BUILD)/output_interface.o: 			$(BUILD)/variable_interface.o		\
+										$(BUILD)/domain_interface.o			\
 										$(BUILD)/constants.o
 
 $(BUILD)/exchangeable_implementation.o: $(BUILD)/exchangeable_interface.o 	\

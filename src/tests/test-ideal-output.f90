@@ -77,6 +77,8 @@ contains
         type(output_t), intent(inout) :: output
         type(domain_t), intent(inout) :: domain
 
+        call output%set_domain(domain)
+
         call domain%water_vapor%set_outputdata(                                                 &
                 variable_t(                                                                     &
                         name="qv",                                                              &
@@ -86,6 +88,7 @@ contains
                         attribute_values=[character(len=kMAX_ATTR_LENGTH) :: "x","z","y" ]))
 
         call output%add_to_output(domain%water_vapor%meta_data)
+        ! call output%add_to_output(domain%accumulated_precipitation)
 
     end subroutine setup_output
 

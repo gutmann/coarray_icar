@@ -9,7 +9,7 @@ module exchangeable_interface
   type :: exchangeable_t
     private
     real, pointer,     public :: local(:,:,:) => null()
-    class(variable_t), allocatable, public :: meta_data
+    type(variable_t),  public :: meta_data
     real, allocatable :: halo_south_in(:,:,:)[:]
     real, allocatable :: halo_north_in(:,:,:)[:]
     real, allocatable :: halo_west_in(:,:,:)[:]
