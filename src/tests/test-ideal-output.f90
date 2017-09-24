@@ -83,12 +83,24 @@ contains
                 variable_t(                                                                     &
                         name="qv",                                                              &
                         n_attrs=3,                                                              &
+                        n_dimensions=3,                                                         &
                         dimensions      =[character(len=kMAX_DIM_LENGTH)  :: "x","z","y" ],     &
                         attribute_names =[character(len=kMAX_ATTR_LENGTH) :: "a","b","c" ],     &
                         attribute_values=[character(len=kMAX_ATTR_LENGTH) :: "x","z","y" ]))
 
         call output%add_to_output(domain%water_vapor%meta_data)
-        ! call output%add_to_output(domain%accumulated_precipitation)
+
+
+        call domain%potential_temperature%set_outputdata(                                       &
+                variable_t(                                                                     &
+                        name="th",                                                              &
+                        n_attrs=1,                                                              &
+                        n_dimensions=3,                                                         &
+                        dimensions      =[character(len=kMAX_DIM_LENGTH)  :: "x","z","y" ],     &
+                        attribute_names =[character(len=kMAX_ATTR_LENGTH) :: "standard_name" ], &
+                        attribute_values=[character(len=kMAX_ATTR_LENGTH) :: "potential_temperature" ]))
+
+        call output%add_to_output(domain%potential_temperature%meta_data)
 
     end subroutine setup_output
 

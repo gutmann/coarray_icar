@@ -107,6 +107,8 @@ test-ideal-output: \
 			$(BUILD)/domain_interface.o				\
 			$(BUILD)/exchangeable_implementation.o	\
 			$(BUILD)/exchangeable_interface.o		\
+			$(BUILD)/meta_data_interface.o			\
+			$(BUILD)/meta_data_implementation.o		\
 			$(BUILD)/variable_interface.o			\
 			$(BUILD)/timer_implementation.o			\
 			$(BUILD)/timer_interface.o				\
@@ -119,7 +121,8 @@ test-ideal-output: \
 			$(BUILD)/constants.o					\
 			$(BUILD)/co_utilities.o					\
 			$(BUILD)/mp_driver.o					\
-			$(BUILD)/mp_thompson.o
+			$(BUILD)/mp_thompson.o					\
+			$(BUILD)/string.o
 	$(link) $^ -o $@ $(link_flags)
 
 test-ideal: \
@@ -128,6 +131,8 @@ test-ideal: \
 			$(BUILD)/domain_interface.o				\
 			$(BUILD)/exchangeable_implementation.o	\
 			$(BUILD)/exchangeable_interface.o		\
+			$(BUILD)/meta_data_interface.o			\
+			$(BUILD)/meta_data_implementation.o		\
 			$(BUILD)/variable_interface.o			\
 			$(BUILD)/timer_implementation.o			\
 			$(BUILD)/timer_interface.o				\
@@ -140,28 +145,32 @@ test-ideal: \
 			$(BUILD)/constants.o					\
 			$(BUILD)/co_utilities.o					\
 			$(BUILD)/mp_driver.o					\
-			$(BUILD)/mp_thompson.o
+			$(BUILD)/mp_thompson.o					\
+			$(BUILD)/string.o
 	$(link) $^ -o $@ $(link_flags)
 
 test-initialization: \
-					 $(BUILD)/test-initialization.o			\
-					 $(BUILD)/domain_implementation.o 		\
-					 $(BUILD)/domain_interface.o 			\
-					 $(BUILD)/exchangeable_implementation.o	\
-					 $(BUILD)/exchangeable_interface.o		\
-		 			 $(BUILD)/variable_interface.o			\
-					 $(BUILD)/assertions_implementation.o	\
-					 $(BUILD)/assertions_interface.o		\
-					 $(BUILD)/configuration_implementation.o\
-					 $(BUILD)/configuration_interface.o		\
-					 $(BUILD)/timer_implementation.o		\
-		 			 $(BUILD)/timer_interface.o				\
-					 $(BUILD)/grid_interface.o				\
-					 $(BUILD)/grid_implementation.o			\
-					 $(BUILD)/constants.o					\
-					 $(BUILD)/co_utilities.o				\
-					 $(BUILD)/mp_driver.o					\
-					 $(BUILD)/mp_thompson.o
+					$(BUILD)/test-initialization.o			\
+					$(BUILD)/domain_implementation.o 		\
+					$(BUILD)/domain_interface.o 			\
+					$(BUILD)/exchangeable_implementation.o	\
+					$(BUILD)/exchangeable_interface.o		\
+					$(BUILD)/meta_data_interface.o			\
+					$(BUILD)/meta_data_implementation.o		\
+					$(BUILD)/variable_interface.o			\
+					$(BUILD)/assertions_implementation.o	\
+					$(BUILD)/assertions_interface.o			\
+					$(BUILD)/configuration_implementation.o	\
+					$(BUILD)/configuration_interface.o		\
+					$(BUILD)/timer_implementation.o			\
+					$(BUILD)/timer_interface.o				\
+					$(BUILD)/grid_interface.o				\
+					$(BUILD)/grid_implementation.o			\
+					$(BUILD)/constants.o					\
+					$(BUILD)/co_utilities.o					\
+					$(BUILD)/mp_driver.o					\
+					$(BUILD)/mp_thompson.o					\
+					$(BUILD)/string.o
 	$(link) $^ -o $@ $(link_flags)
 
 test-timer: \
@@ -173,13 +182,16 @@ test-timer: \
 test-output: \
 			$(BUILD)/test-output.o				\
 			$(BUILD)/constants.o				\
+			$(BUILD)/meta_data_interface.o		\
+			$(BUILD)/meta_data_implementation.o	\
 			$(BUILD)/variable_interface.o		\
 			$(BUILD)/output_interface.o			\
 			$(BUILD)/output_implementation.o	\
 			$(BUILD)/domain_interface.o			\
 			$(BUILD)/domain_implementation.o	\
 			$(BUILD)/exchangeable_interface.o	\
-			$(BUILD)/exchangeable_implementation.o
+			$(BUILD)/exchangeable_implementation.o\
+			$(BUILD)/string.o
 	$(link) $^ -o $@ $(link_flags)
 
 install: $(executable)
@@ -235,15 +247,21 @@ $(BUILD)/assertions_implementation.o: 	$(BUILD)/assertions_interface.o
 $(BUILD)/exchangeable_interface.o: 		$(BUILD)/grid_interface.o 			\
 										$(BUILD)/variable_interface.o
 
-$(BUILD)/variable_interface.o:			$(BUILD)/constants.o
+$(BUILD)/variable_interface.o:			$(BUILD)/constants.o				\
+										$(BUILD)/meta_data_interface.o
 
 $(BUILD)/variable_implementation.o: 	$(BUILD)/variable_interface.o
+
+$(BUILD)/meta_data_interface.o:			$(BUILD)/constants.o
+
+$(BUILD)/meta_data_implementation.o: 	$(BUILD)/meta_data_interface.o
 
 $(BUILD)/output_implementation.o: 		$(BUILD)/output_interface.o
 
 $(BUILD)/output_interface.o: 			$(BUILD)/variable_interface.o		\
 										$(BUILD)/domain_interface.o			\
-										$(BUILD)/constants.o
+										$(BUILD)/constants.o				\
+										$(BUILD)/meta_data_interface.o
 
 $(BUILD)/exchangeable_implementation.o: $(BUILD)/exchangeable_interface.o 	\
 										$(BUILD)/grid_interface.o
@@ -252,11 +270,13 @@ $(BUILD)/configuration_implementation.o: $(BUILD)/configuration_interface.o
 
 $(BUILD)/domain_interface.o: 			$(BUILD)/configuration_interface.o 	\
 										$(BUILD)/exchangeable_interface.o	\
-										$(BUILD)/grid_interface.o
+										$(BUILD)/grid_interface.o			\
+										$(BUILD)/meta_data_interface.o
 
 $(BUILD)/domain_implementation.o: 		$(BUILD)/domain_interface.o 		\
 										$(BUILD)/assertions_interface.o		\
-										$(BUILD)/grid_interface.o
+										$(BUILD)/grid_interface.o			\
+										$(BUILD)/string.o
 
 
 $(info $$BUILD        = ${BUILD})

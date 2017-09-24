@@ -1,7 +1,8 @@
 module domain_interface
   use configuration_interface, only : configuration_t
-  use exchangeable_interface, only : exchangeable_t
-  use grid_interface, only: grid_t
+  use exchangeable_interface,  only : exchangeable_t
+  use grid_interface,          only : grid_t
+  use meta_data_interface,     only : meta_data_t
   implicit none
 
   private
@@ -9,6 +10,7 @@ module domain_interface
 
   type domain_t
     ! private
+    type(meta_data_t)    :: info
     ! core model species to be advected
     type(exchangeable_t) :: water_vapor
     type(exchangeable_t) :: potential_temperature

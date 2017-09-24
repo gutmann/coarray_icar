@@ -7,8 +7,13 @@ contains
     module subroutine set_domain(this, domain)
         class(output_t),  intent(inout)  :: this
         type(domain_t),   intent(in)     :: domain
+        integer :: i
 
         if (.not.this%is_initialized) call this%init()
+
+        do i=1,domain%info%n_attrs
+            call this%add_attribute(domain%info%attribute_names(i), domain%info%attribute_values(i))
+        enddo
 
     end subroutine
 
@@ -19,7 +24,7 @@ contains
 
         if (.not.this%is_initialized) call this%init()
 
-        if (this%n_variables == size(this%variables)) call this%increase_holding_capacity()
+        if (this%n_variables == size(this%variables)) call this%increase_var_capacity()
 
         this%n_variables = this%n_variables + 1
         this%variables(this%n_variables) = variable
@@ -70,8 +75,9 @@ contains
             do i=1,this%n_attrs
                 call check( nf90_put_att(   this%ncfile_id,             &
                                             NF90_GLOBAL,                &
-                                            this%attribute_names(i),    &
-                                            this%attribute_values(i)))
+                                            trim(this%attribute_names(i)),    &
+                                            trim(this%attribute_values(i))),  &
+                                            "global attr:"//trim(this%attribute_names(i)))
             enddo
         endif
 
@@ -173,8 +179,8 @@ contains
             do i=1,size(var%attribute_names)
                 call check( nf90_put_att(this%ncfile_id,                &
                                          var%var_id,                    &
-                                         var%attribute_names(i),        &
-                                         var%attribute_values(i)),      &
+                                         trim(var%attribute_names(i)),        &
+                                         trim(var%attribute_values(i))),      &
                             "saving attribute"//trim(var%attribute_names(i)))
             enddo
         endif
@@ -193,7 +199,7 @@ contains
 
     end subroutine
 
-    module subroutine increase_holding_capacity(this)
+    module subroutine increase_var_capacity(this)
         implicit none
         class(output_t),   intent(inout)  :: this
         class(variable_t), allocatable :: new_variables(:)

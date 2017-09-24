@@ -4,13 +4,14 @@ module output_interface
 
   use variable_interface, only : variable_t
   use domain_interface,   only : domain_t
+  use meta_data_interface,only : meta_data_t
 
   implicit none
 
   private
   public :: output_t
 
-  type output_t
+  type, extends(meta_data_t) :: output_t
       private
       logical :: is_initialized = .false.
       logical :: creating = .false.
@@ -25,10 +26,6 @@ module output_interface
       integer :: dim_ids(kMAX_DIMENSIONS)
       character(len=kMAX_DIM_LENGTH) :: dimensions(kMAX_DIMENSIONS)
 
-      integer :: n_attrs = 0
-      character(len=kMAX_ATTR_LENGTH), allocatable :: attribute_names(:)
-      character(len=kMAX_ATTR_LENGTH), allocatable :: attribute_values(:)
-
   contains
 
       procedure, public  :: add_to_output
@@ -36,7 +33,7 @@ module output_interface
       procedure, public  :: set_domain
 
       procedure, private :: init
-      procedure, private :: increase_holding_capacity
+      procedure, private :: increase_var_capacity
   end type
 
   interface
@@ -46,7 +43,7 @@ module output_interface
           class(output_t),   intent(inout)  :: this
       end subroutine
 
-      module subroutine increase_holding_capacity(this)
+      module subroutine increase_var_capacity(this)
           implicit none
           class(output_t),   intent(inout)  :: this
       end subroutine

@@ -1,7 +1,8 @@
 submodule(domain_interface) domain_implementation
   use assertions_interface, only : assert,assertions
-  use iso_fortran_env, only : error_unit
-  use grid_interface, only : grid_t
+  use iso_fortran_env,      only : error_unit
+  use grid_interface,       only : grid_t
+  use string,               only : str
 
   implicit none
 
@@ -147,7 +148,36 @@ contains
           this%water_vapor%local = sat_mr(this%temperature,this%pressure)
       end associate
 
+      call setup_meta_data(this)
+
     end subroutine
+
+    subroutine setup_meta_data(this)
+        implicit none
+        type(domain_t), intent(inout) :: this
+
+        call this%info%add_attribute("ids",str(this%ids))
+        call this%info%add_attribute("ide",str(this%ide))
+        call this%info%add_attribute("jds",str(this%jds))
+        call this%info%add_attribute("jde",str(this%jde))
+        call this%info%add_attribute("kds",str(this%kds))
+        call this%info%add_attribute("kde",str(this%kde))
+
+        call this%info%add_attribute("ims",str(this%ims))
+        call this%info%add_attribute("ime",str(this%ime))
+        call this%info%add_attribute("jms",str(this%jms))
+        call this%info%add_attribute("jme",str(this%jme))
+        call this%info%add_attribute("kms",str(this%kms))
+        call this%info%add_attribute("kme",str(this%kme))
+
+        call this%info%add_attribute("its",str(this%its))
+        call this%info%add_attribute("ite",str(this%ite))
+        call this%info%add_attribute("jts",str(this%jts))
+        call this%info%add_attribute("jte",str(this%jte))
+        call this%info%add_attribute("kts",str(this%kts))
+        call this%info%add_attribute("kte",str(this%kte))
+
+    end subroutine setup_meta_data
 
 
     !>----------------------------------------------------------
