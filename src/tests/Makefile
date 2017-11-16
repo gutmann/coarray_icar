@@ -25,7 +25,16 @@ tests_dir=.
 coarray_icar_root := ../..
 root := $(HOME)
 
-lib_dirs := #-L $(root)/lib
+oca_root=$(root)/usr/local/opencoarrays/
+
+# directories containing opencoarrays compiled with multiple mpi libraries on cheyenne
+# oca_lib=$(oca_root)/impi-2017.1.132
+# oca_lib=$(oca_root)/mpich-3.2
+# oca_lib=$(oca_root)/mpt_2.15f
+oca_lib=$(oca_root)/openmpi
+
+
+lib_dirs := -L $(oca_lib)#-L $(root)/lib
 inc_dirs := #-I $(root)/inc
 install_dir := $(root)/bin
 
@@ -37,26 +46,27 @@ endif
 
 # Specify the compiler invocation name and flags
 ifeq ($(COMPILER),gnu)
-  compile := caf
+  compile := mpif90 -fcoarray=lib
   link := $(compile)
   parallel := -fopenmp -lgomp
   opt := $(parallel) -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
-  link_flags := $(parallel) -fcheck=all -Wall -fbacktrace -g
+  link_flags := $(parallel) -fcheck=all -Wall -fbacktrace -g -lcaf_mpi
   ifeq ($(MODE),fast)
 	  opt := $(parallel) -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
-	  link_flags := $(parallel) -Ofast
+	  link_flags := $(parallel) -Ofast -lcaf_mpi
   endif
 endif
 
 ifeq ($(COMPILER),oshfort)
   compile := oshfort
   link := $(compile)
+  parallel := -fopenmp -lgomp
   OSH_FLAGS := -fcoarray=lib -L/glade/u/home/elfanfa/Cheyenne/opencoarrays_openshmem/src/openshmem -lcaf_openshmem
-  opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/ $(OSH_FLAGS)
-  link_flags := -fcheck=all -Wall -fbacktrace -g $(OSH_FLAGS)
+  opt := $(parallel) -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/ $(OSH_FLAGS)
+  link_flags := $(parallel) -fcheck=all -Wall -fbacktrace -g $(OSH_FLAGS)
   ifeq ($(MODE),fast)
-	  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/ $(OSH_FLAGS)
-	  link_flags := -Ofast $(OSH_FLAGS)
+	  opt := $(parallel) -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/ $(OSH_FLAGS)
+	  link_flags := $(parallel) -Ofast $(OSH_FLAGS)
   endif
 endif
 
