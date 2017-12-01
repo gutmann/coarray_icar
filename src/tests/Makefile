@@ -46,6 +46,10 @@ ifeq ($(COMPILER),gnu)
 	  opt := $(parallel) -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
 	  link_flags := $(parallel) -Ofast
   endif
+  ifeq ($(MODE),profile)
+	  opt := $(parallel) -g -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
+	  link_flags := $(parallel) -g -Ofast
+  endif
 endif
 
 ifeq ($(COMPILER),oshfort)
