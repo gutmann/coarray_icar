@@ -25,8 +25,8 @@ tests_dir=.
 coarray_icar_root := ../..
 root := $(HOME)
 
-lib_dirs := -L $(root)/lib
-inc_dirs := -I $(root)/inc
+lib_dirs := #-L $(root)/lib
+inc_dirs := #-I $(root)/inc
 install_dir := $(root)/bin
 
 
@@ -39,23 +39,38 @@ endif
 ifeq ($(COMPILER),gnu)
   compile := caf
   link := $(compile)
-  opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
-  link_flags := -fcheck=all -Wall -fbacktrace -g
+  parallel := -fopenmp -lgomp
+  opt := $(parallel) -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
+  link_flags := $(parallel) -fcheck=all -Wall -fbacktrace -g
   ifeq ($(MODE),fast)
-	  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
-	  link_flags := -Ofast
+	  opt := $(parallel) -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
+	  link_flags := $(parallel) -Ofast
   endif
 endif
 
+ifeq ($(COMPILER),oshfort)
+  compile := oshfort
+  link := $(compile)
+  OSH_FLAGS := -fcoarray=lib -L/glade/u/home/elfanfa/Cheyenne/opencoarrays_openshmem/src/openshmem -lcaf_openshmem
+  opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/ $(OSH_FLAGS)
+  link_flags := -fcheck=all -Wall -fbacktrace -g $(OSH_FLAGS)
+  ifeq ($(MODE),fast)
+	  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/ $(OSH_FLAGS)
+	  link_flags := -Ofast $(OSH_FLAGS)
+  endif
+endif
+
+
 ifeq ($(COMPILER),intel)
-	compile := mpif90
+	compile := mpiifort
 	link := $(compile)
-	opt := -standard-semantics -coarray -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
-	link_flags := -standard-semantics -coarray -check all -traceback -g
+	parallel := -qopenmp -liomp5
+	opt := ${parallel} -standard-semantics -coarray=distributed -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+	link_flags := ${parallel} -standard-semantics -coarray=distributed -check all -traceback -g
 
 	ifeq ($(MODE),fast)
-		opt := -O3 -xHost -coarray -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
-	    link_flags := -O3 -xHost -coarray
+		opt := ${parallel} -O3 -xHost -coarray=distributed -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+	    link_flags := ${parallel} -O3 -xHost -coarray=distributed
 	endif
 endif
 
@@ -64,6 +79,7 @@ ifeq ($(COMPILER),cray)
 	  link := $(compile)
       link_flags :=
       opt := -e T -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+	  # note to disable openmp on cray add -h noomp
 endif
 
 

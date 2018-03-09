@@ -1,0 +1,14 @@
+#!/bin/bash --login
+#PBS -l nodes=86:ppn=44
+#PBS -l walltime=00:60:00
+
+export XT_SYMMETRIC_HEAP_SIZE=512M
+export executable=test-ideal
+
+# change to the directory from which the job was submitted
+cd $PBS_O_WORKDIR
+echo "pwd=$PWD"
+
+echo "Starting job"
+aprun -n 4400 ./${executable}
+echo "Finished job"

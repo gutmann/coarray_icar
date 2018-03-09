@@ -106,10 +106,11 @@ module domain_interface
       class(domain_t), intent(inout) :: this
     end subroutine
 
-    module subroutine domain_decomposition(this, nx, ny, nimages)
+    module subroutine domain_decomposition(this, nx, ny, nimages, ratio)
       implicit none
       class(domain_t), intent(inout) :: this
       integer,         intent(in)    :: nx, ny, nimages
+      real,            intent(in), optional :: ratio
     end subroutine
 
     ! Return x, y, z dimensions of grid

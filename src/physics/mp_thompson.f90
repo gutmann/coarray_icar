@@ -57,6 +57,7 @@
 
       LOGICAL, PARAMETER, PRIVATE:: iiwarm = .false.
       LOGICAL, PRIVATE:: is_aerosol_aware = .false.
+      !$omp threadprivate(is_aerosol_aware)
       LOGICAL, PARAMETER, PRIVATE:: dustyIce = .true.
       LOGICAL, PARAMETER, PRIVATE:: homogIce = .true.
 
@@ -94,6 +95,7 @@
       REAL, PARAMETER, PRIVATE:: mu_g = 0.0
       REAL, PARAMETER, PRIVATE:: mu_i = 0.0
       REAL, PRIVATE:: mu_c
+      !$omp threadprivate(mu_c)
 
 !..Sum of two gamma distrib for snow (Field et al. 2005).
 !.. N(D) = M2**4/M3**3 * [Kap0*exp(-M2*Lam0*D/M3)
@@ -171,6 +173,7 @@
 !..Schmidt number
       REAL, PARAMETER, PRIVATE:: Sc = 0.632
       REAL, PRIVATE:: Sc3
+      !$omp threadprivate(Sc3)
 
 !..Homogeneous freezing temperature
       REAL, PARAMETER, PRIVATE:: HGFR = 235.16
@@ -203,6 +206,7 @@
       REAL, PARAMETER, PRIVATE:: D0s = 200.E-6
       REAL, PARAMETER, PRIVATE:: D0g = 250.E-6
       REAL, PRIVATE:: D0i, xm0s, xm0g
+      !$omp threadprivate(D0i, xm0s, xm0g)
 
 !..Lookup table dimensions
       INTEGER, PARAMETER, PRIVATE:: nbins = 100
@@ -221,6 +225,7 @@
       INTEGER, PARAMETER, PRIVATE:: ntb_i1 = 55
       INTEGER, PARAMETER, PRIVATE:: ntb_t = 9
       INTEGER, PRIVATE:: nic1, nic2, nii2, nii3, nir2, nir3, nis2, nig2, nig3
+      !$omp threadprivate(nic1, nic2, nii2, nii3, nir2, nir3, nis2, nig2, nig3)
       INTEGER, PARAMETER, PRIVATE:: ntb_arc = 7
       INTEGER, PARAMETER, PRIVATE:: ntb_arw = 9
       INTEGER, PARAMETER, PRIVATE:: ntb_art = 7
@@ -228,6 +233,7 @@
       INTEGER, PARAMETER, PRIVATE:: ntb_ark = 4
       INTEGER, PARAMETER, PRIVATE:: ntb_IN = 55
       INTEGER, PRIVATE:: niIN2
+      !$omp threadprivate(niIN2)
 
       DOUBLE PRECISION, DIMENSION(nbins+1):: xDx
       DOUBLE PRECISION, DIMENSION(nbc):: Dc, dtc
@@ -1100,8 +1106,15 @@
       LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
       INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
       CHARACTER*256:: mp_debug
+      integer :: OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 
 !+---+
+     !$OMP PARALLEL DEFAULT(PRIVATE) FIRSTPRIVATE(ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,          &
+     !$OMP kms,kme,its,ite,jts,jte,kts,kte,dt_in,itimestep,diagflag,has_reqc, has_reqi, has_reqs)   &
+     !$omp shared(tcg_racg,tmr_racg,tcr_gacr,tmg_gacr,tnr_racg,tnr_gacr)            &
+     !$OMP SHARED(RAINNCV,RAINNC,SNOWNCV,SNOWNC,GRAUPELNCV,GRAUPELNC,SR,w,th,pii,p,dz,qv,qc,        &
+     !$OMP qi,qr,qs,qg,ni,nr,nc,nwfa,nifa,nwfa2d,refl_10cm,re_cloud,re_ice,re_snow)
+     ! parameter list : Nt_c,TNO,rho_g,av_s,bv_s,fv_s,av_g,bv_g,EF_si,Ef_ri
 
       i_start = its
       j_start = jts
@@ -1157,7 +1170,9 @@
         !  CALL wrf_debug(0, mp_debug)
       endif
 
+      !$omp do schedule(guided)
       j_loop:  do j = j_start, j_end
+        !   print*, this_image(), j-j_start, omp_get_thread_num(), omp_get_num_threads()
       i_loop:  do i = i_start, i_end
 
          pptrain = 0.
@@ -1366,6 +1381,8 @@
 
       enddo i_loop
       enddo j_loop
+      !$omp end do
+      !$omp end parallel
 
 ! DEBUG - GT
     !   write(mp_debug,'(a,7(a,e13.6,1x,a,i3,a,i3,a,i3,a,1x))') 'MP-GT:', &
