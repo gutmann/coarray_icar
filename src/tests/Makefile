@@ -17,6 +17,10 @@ else
   co_utils_base:=co_utilities
 endif
 
+ifeq ($(DEBUG_OUTPUT),)
+  DEBUG_OUTPUT:=.false.
+endif
+
 ifndef NETCDF
 	NETCDF=/usr/local
 endif
@@ -48,10 +52,10 @@ ifeq ($(COMPILER),gnu)
   compile := caf
   link := $(compile)
   parallel := -fopenmp -lgomp
-  opt := $(parallel) -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
+  opt := $(parallel) -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -DDEBUG_OUTPUT=$(DEBUG_OUTPUT) . -J $(BUILD)/
   link_flags := $(parallel) -fcheck=all -Wall -fbacktrace -g
   ifeq ($(MODE),fast)
-	  opt := $(parallel) -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/
+	  opt := $(parallel) -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -DDEBUG_OUTPUT=$(DEBUG_OUTPUT) -J $(BUILD)/
 	  link_flags := $(parallel) -Ofast
   endif
   ifeq ($(MODE),profile)
@@ -64,10 +68,10 @@ ifeq ($(COMPILER),oshfort)
   compile := oshfort
   link := $(compile)
   OSH_FLAGS := -fcoarray=lib -L/glade/u/home/elfanfa/Cheyenne/opencoarrays_openshmem/src/openshmem -lcaf_openshmem
-  opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/ $(OSH_FLAGS)
+  opt := -fcheck=all -Wall -fbacktrace -g -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -DDEBUG_OUTPUT=$(DEBUG_OUTPUT) -J $(BUILD)/ $(OSH_FLAGS)
   link_flags := -fcheck=all -Wall -fbacktrace -g $(OSH_FLAGS)
   ifeq ($(MODE),fast)
-	  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -J $(BUILD)/ $(OSH_FLAGS)
+	  opt := -Ofast -cpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -DDEBUG_OUTPUT=$(DEBUG_OUTPUT) -J $(BUILD)/ $(OSH_FLAGS)
 	  link_flags := -Ofast $(OSH_FLAGS)
   endif
 endif
@@ -77,11 +81,11 @@ ifeq ($(COMPILER),intel)
 	compile := ifort
 	link := $(compile)
 	parallel := -qopenmp -coarray-config-file=./cafconfig.txt -coarray=distributed
-	opt := ${parallel} -standard-semantics -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+	opt := ${parallel} -standard-semantics -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/ -DDEBUG_OUTPUT=$(DEBUG_OUTPUT)
 	link_flags := ${parallel} -standard-semantics -check all -traceback -g
 
 	ifeq ($(MODE),fast)
-		opt := ${parallel} -O3 -xHost -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+		opt := ${parallel} -O3 -xHost -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/ -DDEBUG_OUTPUT=$(DEBUG_OUTPUT)
 	    link_flags := ${parallel} -O3 -xHost
 	endif
 endif
@@ -90,7 +94,7 @@ ifeq ($(COMPILER),cray)
       compile := ftn
 	  link := $(compile)
       link_flags :=
-      opt := -e T -DUSE_ASSERTIONS=$(USE_ASSERTIONS)
+      opt := -e T -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -DDEBUG_OUTPUT=$(DEBUG_OUTPUT)
 	  # note to disable openmp on cray add -h noomp
 endif
 
