@@ -104,7 +104,8 @@ contains
           surface_z            => 0.0,              &   ! elevation of the first model level [m]
           dz_value             => 500.0,            &   ! thickness of each model gridcell   [m]
           sealevel_pressure    => 100000.0,         &   ! pressure at sea level              [Pa]
-          hill_height          => 1000.0,           &
+          hill_height          => 1000.0,           &   ! height of the ideal hill(s)        [m]
+          n_hills              => 1.0,              &   ! number of hills across the domain  []
           ids=>this%ids, ide=>this%ide,             &
           jds=>this%jds, jde=>this%jde,             &
           kds=>this%kds, kde=>this%kde,             &
@@ -126,8 +127,8 @@ contains
           ! this is a simple sine function for a hill... not the best test case but it's easy
           do j=jms,jme
               do i=ims,ime
-                  sine_curve = (sin((i-ids)/real(ide-ids) * 2*3.14159 - 3.14159/2) + 1) / 2  &
-                              *(sin((j-jds)/real(jde-jds) * 2*3.14159 - 3.14159/2) + 1) / 2
+                  sine_curve = (sin((i-ids)/real((ide-ids) / n_hills) * 2*3.14159 - 3.14159/2) + 1) / 2  &
+                              *(sin((j-jds)/real((jde-jds) / n_hills) * 2*3.14159 - 3.14159/2) + 1) / 2
 
                   this%z_interface(i,kms,j) = surface_z + sine_curve * hill_height
               enddo
