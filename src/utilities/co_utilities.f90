@@ -8,6 +8,7 @@ contains
         real(kind=8), intent(inout) :: coarray(:,:,:,:)[*]
         integer, intent(in) :: source_image, first_image, last_image
         integer :: dest_image
+        integer :: x,y
 
         if (first_image==last_image) return
 
@@ -15,7 +16,11 @@ contains
             dest_image=first_image
 
             if (this_image()==source_image) then
-                coarray(:,:,:,:)[dest_image] = coarray
+                do y=1,size(coarray,4)
+                    do x=1,size(coarray,3)
+                        coarray(:,:,x,y)[dest_image] = coarray(:,:,x,y)
+                    enddo
+                enddo
                 sync images(dest_image)
             elseif (this_image()== dest_image) then
                 sync images(source_image)
@@ -30,7 +35,11 @@ contains
             dest_image = ((last_image-first_image)+1)/2 + first_image
 
             if (this_image()==source_image) then
-                coarray(:,:,:,:)[dest_image] = coarray
+                do y=1,size(coarray,4)
+                    do x=1,size(coarray,3)
+                        coarray(:,:,x,y)[dest_image] = coarray(:,:,x,y)
+                    enddo
+                enddo
                 sync images(dest_image)
             elseif (this_image()== dest_image) then
                 sync images(source_image)
