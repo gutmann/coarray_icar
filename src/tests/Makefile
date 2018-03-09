@@ -66,15 +66,15 @@ endif
 
 
 ifeq ($(COMPILER),intel)
-	compile := mpiifort
+	compile := ifort
 	link := $(compile)
-	parallel := -qopenmp -liomp5
-	opt := ${parallel} -standard-semantics -coarray=distributed -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
-	link_flags := ${parallel} -standard-semantics -coarray=distributed -check all -traceback -g
+	parallel := -qopenmp -coarray-config-file=./cafconfig.txt -coarray=distributed
+	opt := ${parallel} -standard-semantics -check all -traceback -g -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+	link_flags := ${parallel} -standard-semantics -check all -traceback -g
 
 	ifeq ($(MODE),fast)
-		opt := ${parallel} -O3 -xHost -coarray=distributed -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
-	    link_flags := ${parallel} -O3 -xHost -coarray=distributed
+		opt := ${parallel} -O3 -xHost -fpp -DUSE_ASSERTIONS=$(USE_ASSERTIONS) -module $(BUILD)/
+	    link_flags := ${parallel} -O3 -xHost
 	endif
 endif
 
