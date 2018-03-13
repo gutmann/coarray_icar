@@ -22,7 +22,19 @@ CONTENTS
 Installation and testing
 ------------------------
 
-### Installation for Linux/OSX Operating Systems
+The first execution creates three *.dat files and takes about 30 minutes usin 4 cores inside 
+a Lubuntu Linux virtualmachine.  Subsequent executions will read the *.dat files and executive 
+run much faster than the first run.
+
+### Installation and execution via Make and GCC in a bash shell:
+```bash
+$ cd coarray_icar/src/tests 
+$ export COMPILER=gnu
+$ make USE_ASSERTIONS=.true.
+$ cafrun -n 4 ./test-ideal
+```
+which will run the `test-ideal` executable program in 4 images.
+### Installation via CMake and execution via CTest:
 
 Compile and test coarray in a bash shell on a Linux, macOS, or the Windows Subsystem for Linux:
 ```bash
@@ -39,15 +51,16 @@ where
  * \<compiler-command\> is the command you use to invoke the compiler of your choice.
  * \<coarray-icar-install-path\> is the desired location for installing coarray ICAR 
 
-For example, you might specify, `~/coarray_icar`, `4`, and `caf`, respectively, if Coarray 
-ICAR your home directoy, you want to accelerate the build by using 4 parallel processes, and 
-you use the command `caf` to invoke the [OpenCoarrays] wrapper for the GNU Fortran compiler. 
-Alternatively specify, `ifort` as the compiler command for to invoke the Intel Fortran compiler.
+For example, you might specify, `~/coarray_icar`, `4`, `caf`, and `~/bin`, respectively, if the Coarray 
+ICAR source is in your home directoy, you want to accelerate the build by using 4 parallel processes, and 
+you use the command `caf` to invoke the GNU Fortran compiler via the [OpenCoarrays] wrapper. 
+Alternatively, specify `ifort` as the compiler command for to invoke the Intel Fortran compiler.
 
-TODO: The CMake files need adjusting for building with non-GNU compilers. 
+TODO: The CMake files need adjusting for building with non-GNU compilers.
 
 ### Build options
 Append `-DNO_ASSERTIONS=ON` to the above `cmake` command to turn off runtime checking of assertions.
+Including assertions enhances the runtime error checking at a significant cost (factor of 2 in runtime).
 
 System requirements
 -------------------
@@ -59,12 +72,13 @@ The following operating systems are supported:
 
 The following compilers are supported: 
 - Intel Fortran Compiler Version 16.0.0 or later
-OR 
-- [GNU Fortran Compiler] Version 6.1.0 or later
-- GNU Makefile
-- [CMake] 3.7 or later (required for Fortran submodule support)
-OR 
+- [GNU Fortran Compiler] Version 6.3.0 (a regression prevents the use of later versions)
 - Cray Fortran Compiler (untested)
+
+The following build software is supported: 
+- [CMake] 3.7 or later (required for Fortran submodule support)
+OR
+- GNU Makefile 
 
 Generating documentation
 ------------------------
