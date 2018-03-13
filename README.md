@@ -76,7 +76,7 @@ The following compilers are supported:
 - Cray Fortran Compiler (untested)
 
 The following build software is supported: 
-- [CMake] 3.7 or later (required for Fortran submodule support)
+- [CMake] 3.10 or later
 OR
 - GNU Makefile 
 
