@@ -44,11 +44,12 @@ if (NOT "${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU|Intel|Cray" )
 endif()
 
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Intel" )
-  if (DEFINED DISTRIBUTED)
+  if (DISTRIBUTED)
     set(coarray_flags "-coarray=distributed")
   else()
     set(coarray_flags "-coarray=shared")
   endif()
+  message(STATUS "Compiling with ${coarray_flags}")
 endif()
 
 set(CMAKE_Fortran_FLAGS_DEBUG "${coarray_flags} ${CMAKE_Fortran_FLAGS_DEBUG}")

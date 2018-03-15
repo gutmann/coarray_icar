@@ -54,9 +54,12 @@ where
 For example, you might specify, `~/coarray_icar`, `4`, `caf`, and `~/bin`, respectively, if the Coarray 
 ICAR source is in your home directoy, you want to accelerate the build by using 4 parallel processes, and 
 you use the command `caf` to invoke the GNU Fortran compiler via the [OpenCoarrays] wrapper. 
-Alternatively, specify `ifort` as the compiler command for to invoke the Intel Fortran compiler.
-
-TODO: The CMake files need adjusting for building with non-GNU compilers.
+Alternatively, specify `ifort` as the compiler command for to invoke the Intel Fortran compiler
+and optionally specific `-DDISTRIBUTED:BOOL=ON` to compile using the Intel Parallel Studio Cluster Edition
+for execution on distributed-memory platforms:
+```bash
+  FC=ifort cmake .. -DDISTRIBUTED:BOOL=ON
+```
 
 ### Build options
 Append `-DNO_ASSERTIONS=ON` to the above `cmake` command to turn off runtime checking of assertions.
