@@ -43,21 +43,21 @@ if (NOT "${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU|Intel|Cray" )
   )
 endif()
 
-if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU" )
-  set(coarray_flags "-fcoarray=single")
-elseif ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Intel" )
-  set(coarray_flags "-coarray=shared")
-  set(CMAKE_Fortran_FLAGS_DEBUG "${coarray_flags} ${CMAKE_Fortran_FLAGS_DEBUG}")
-  set(CMAKE_Fortran_FLAGS_RELEASE "${coarray_flags} ${CMAKE_Fortran_FLAGS_RELEASE}")
-  set(CMAKE_Fortran_FLAGS_MINSIZEREL "${coarray_flags} ${CMAKE_Fortran_FLAGS_MINSIZEREL}")
-  set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${coarray_flags} ${CMAKE_Fortran_FLAGS_RELWITHDEBINFO}")
+if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Intel" )
+  if (DEFINED DISTRIBUTED)
+    set(coarray_flags "-coarray=distributed")
+  else()
+    set(coarray_flags "-coarray=shared")
+  endif()
 endif()
 
-set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod)
-#install(TARGETS mod DESTINATION mod)
+set(CMAKE_Fortran_FLAGS_DEBUG "${coarray_flags} ${CMAKE_Fortran_FLAGS_DEBUG}")
+set(CMAKE_Fortran_FLAGS_RELEASE "${coarray_flags} ${CMAKE_Fortran_FLAGS_RELEASE}")
+set(CMAKE_Fortran_FLAGS_MINSIZEREL "${coarray_flags} ${CMAKE_Fortran_FLAGS_MINSIZEREL}")
+set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${coarray_flags} ${CMAKE_Fortran_FLAGS_RELWITHDEBINFO}")
 
-set(OLD_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-set(CMAKE_REQUIRED_FLAGS "${coarray_flags}")
+set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod)
+
 include(CheckFortranSourceCompiles)
 check_fortran_source_compiles("
   program main
@@ -67,8 +67,6 @@ check_fortran_source_compiles("
   end program
 " Check_Simple_Coarray_Fortran_Source_Compiles
   SRC_EXT ".f90")
-set (CMAKE_REQUIRED_FLAGS ${OLD_REQUIRED_FLAGS})
-unset(OLD_REQUIRED_FLAGS)
 
 check_fortran_source_compiles("
   program main
