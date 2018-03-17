@@ -18,6 +18,10 @@ module timer_interface
         real    :: start_time = 0
         real    :: end_time   = 0
         real    :: total_time = 0
+        integer :: counter    = 0
+        integer :: count_max  = 32767
+        integer :: count_rate = 1
+        logical :: use_cpu_time = .False.
         logical :: is_running = .False.
       contains
         procedure :: start
@@ -34,9 +38,10 @@ interface
     !! Sets the internal start_time and marks the timer as running
     !!
     !! ------------------------------------
-    module subroutine start(this)
+    module subroutine start(this, use_cpu_time)
         implicit none
         class(timer_t), intent(inout) :: this
+        logical,        intent(in),   optional :: use_cpu_time
     end subroutine start
 
     !> -----------------------------------
