@@ -18,7 +18,7 @@ else
 endif
 
 ifeq ($(DEBUG_OUTPUT),)
-  DEBUG_OUTPUT:=.false.
+  DEBUG_OUTPUT:=.true.
 endif
 
 ifndef NETCDF
