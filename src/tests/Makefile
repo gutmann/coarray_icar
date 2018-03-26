@@ -1,12 +1,20 @@
 # Usage:
 #
 #    make USE_ASSERTIONS=.false. # Defaults to .true. if not provided
+#    make F18=TRUE # use the Fortran 2018 function CO_BROADCAST (disabled by
+#    default)
 
 # Example of printing a variable named "var" delimited by square braces
 # $(info $$var is [${var}])
 
 ifeq ($(USE_ASSERTIONS),)
   USE_ASSERTIONS:=.false.
+endif
+
+ifeq ($(F18),TRUE)
+  co_utils_base:=co_utilities_f18
+else
+  co_utils_base:=co_utilities
 endif
 
 ifndef NETCDF
@@ -118,7 +126,7 @@ test-ideal: \
 			$(BUILD)/configuration_interface.o		\
 			$(BUILD)/grid_interface.o				\
 			$(BUILD)/grid_implementation.o			\
-			$(BUILD)/co_utilities.o					\
+			$(BUILD)/$(co_utils_base).o					\
 			$(BUILD)/mp_driver.o					\
 			$(BUILD)/mp_thompson.o
 	$(link) $^ -o $@ $(link_flags)
@@ -137,7 +145,7 @@ test-initialization: \
 		 			 $(BUILD)/timer_interface.o				\
 					 $(BUILD)/grid_interface.o				\
 					 $(BUILD)/grid_implementation.o			\
-					 $(BUILD)/co_utilities.o				\
+					 $(BUILD)/$(co_utils_base).o				\
 					 $(BUILD)/mp_driver.o					\
 					 $(BUILD)/mp_thompson.o
 	$(link) $^ -o $@ $(link_flags)
@@ -163,7 +171,7 @@ $(BUILD)/test-initialization.o: test-initialization.f90 		\
 	$(compile) $(comp_flags) -c $< -o $@
 
 # $(BUILD)/test-bcast.o:  test-bcast.f90		\
-# 						$(BUILD)/co_utilities.o
+# 						$(BUILD)/$(co_utils_base).o
 
 $(BUILD)/test-ideal.o: 	test-ideal.f90					\
 						$(BUILD)/domain_interface.o 	\
@@ -178,7 +186,7 @@ $(BUILD)/test-timer.o: test-timer.f90 $(BUILD)/timer_interface.o
 
 
 $(BUILD)/mp_thompson.o: 				$(BUILD)/timer_interface.o			\
-										$(BUILD)/co_utilities.o
+										$(BUILD)/$(co_utils_base).o
 
 $(BUILD)/mp_driver.o: 					$(BUILD)/mp_thompson.o 				\
 										$(BUILD)/domain_interface.o
