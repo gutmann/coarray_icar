@@ -1,0 +1,1 @@
+-genvall -genv I_MPI_FABRICS=shm:ofa -machinefile /var/spool/pbs/aux/7018543.chadmin1 -n 360 ./test-ideal
